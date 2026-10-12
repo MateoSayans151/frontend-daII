@@ -116,6 +116,9 @@ export interface Curso {
   cupoMaximo: number
   fechaInicio: string
   fechaFin: string
+  turno: 'TARDE' | 'MAÑANA' | 'NOCHE' | null
+  horaInicio: string | null
+  horaFin: string | null
 }
 export interface CrearCurso {
   codigo: string
@@ -127,6 +130,9 @@ export interface CrearCurso {
   cupoMaximo: number
   fechaInicio: string
   fechaFin: string
+  turno: 'TARDE' | 'MAÑANA' | 'NOCHE' | ''
+  horaInicio: string
+  horaFin: string
 }
 
 export interface DocenteCurso {

@@ -25,6 +25,9 @@ const cursoVacio: CrearCurso = {
   cupoMaximo: 0,
   fechaInicio: '',
   fechaFin: '',
+  turno: '',
+  horaInicio: '',
+  horaFin: '',
 }
 
 const periodoIds = Array.from({ length: 100 }, (_, index) => index + 1)
@@ -77,13 +80,20 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
       !Number.isInteger(valores.cupoMaximo) ||
       valores.cupoMaximo <= 0 ||
       !valores.fechaInicio ||
-      !valores.fechaFin
+      !valores.fechaFin ||
+      !valores.turno ||
+      !valores.horaInicio ||
+      !valores.horaFin
     ) {
       onNotify('Completá todos los campos del curso con valores válidos.')
       return
     }
     if (valores.fechaInicio > valores.fechaFin) {
       onNotify('La fecha de inicio no puede ser posterior a la fecha de fin.')
+      return
+    }
+    if (valores.horaInicio >= valores.horaFin) {
+      onNotify('La hora de fin debe ser posterior a la de inicio.')
       return
     }
     const resultado = await dispatch(crearCurso(valores))
@@ -181,6 +191,22 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
             <CalendarDatePicker label="Fecha de inicio" value={valores.fechaInicio} onChange={(fechaInicio) => setValores({ ...valores, fechaInicio })} />
             <CalendarDatePicker label="Fecha de fin" value={valores.fechaFin} onChange={(fechaFin) => setValores({ ...valores, fechaFin })} />
           </div>
+          <div className="form-grid">
+            <label>Turno
+              <select value={valores.turno} onChange={(event) => setValores({ ...valores, turno: event.target.value as CrearCurso['turno'] })}>
+                <option value="">Seleccioná un turno...</option>
+                <option value="MAÑANA">MAÑANA</option>
+                <option value="TARDE">TARDE</option>
+                <option value="NOCHE">NOCHE</option>
+              </select>
+            </label>
+            <label>Hora de inicio
+              <input type="time" value={valores.horaInicio} onChange={(event) => setValores({ ...valores, horaInicio: event.target.value })} />
+            </label>
+            <label>Hora de fin
+              <input type="time" value={valores.horaFin} onChange={(event) => setValores({ ...valores, horaFin: event.target.value })} />
+            </label>
+          </div>
           <button className="primary-button" type="button" onClick={crear}><Check size={16} /> Guardar curso</button>
         </article>
       )}
@@ -191,7 +217,7 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>Código</th><th>Asignatura</th><th>Período</th><th>Sede</th><th>Cupo</th><th>Fechas</th><th>Estado</th><th /></tr>
+              <tr><th>Código</th><th>Asignatura</th><th>Período</th><th>Sede</th><th>Cupo</th><th>Fechas</th><th>Turno y horario</th><th>Estado</th><th /></tr>
             </thead>
             <tbody>
               {rows.map((curso) => (
@@ -202,6 +228,7 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
                   <td>#{curso.sedeId}</td>
                   <td>{curso.cupoMaximo}</td>
                   <td>{curso.fechaInicio} – {curso.fechaFin}</td>
+                  <td>{curso.turno ?? 'Sin turno'}{curso.horaInicio && curso.horaFin ? ` · ${curso.horaInicio.slice(0, 5)}–${curso.horaFin.slice(0, 5)}` : ''}</td>
                   <td>{curso.estado}</td>
                   <td><button className="secondary-button" type="button" onClick={() => abrirDetalle(curso.id)}>Administrar</button></td>
                 </tr>
@@ -336,6 +363,7 @@ function DetalleCurso({
           <span>{curso.modalidad} · Cupo {curso.cupoMaximo}</span>
         </div>
         <p className="muted-copy">{curso.fechaInicio} – {curso.fechaFin}</p>
+        <p className="muted-copy">{curso.turno ?? 'Sin turno'}{curso.horaInicio && curso.horaFin ? ` · ${curso.horaInicio.slice(0, 5)}–${curso.horaFin.slice(0, 5)}` : ''}</p>
         <div className="form-grid">
           <label>Estado<input value={estado} onChange={(event) => setEstado(event.target.value)} /></label>
         </div>
