@@ -1,8 +1,8 @@
 import { authAxios } from "../api/authAxios";
 import type {
   AsignarDocenteCurso,
+  ActualizarHorarioCurso,
   CrearCurso,
-  CrearHorarioCurso,
   Curso,
   CursoDetalle,
   GuardarInscripcionCurso,
@@ -16,11 +16,23 @@ export const cursosService = {
       .get<Curso[]>(BASE, { params: periodoId ? { periodoId } : undefined })
       .then((r) => r.data),
   obtener: (id: number) =>
-    authAxios.get<CursoDetalle>(`${BASE}/${id}`).then((r) => r.data),
+    authAxios.get<{
+      curso: Curso & { asignatura: { id: number }; periodo: { id: number } }
+      docentes: CursoDetalle['docentes']
+      inscripciones: CursoDetalle['inscripciones']
+    }>(`${BASE}/${id}`).then(({ data }) => ({
+      ...data.curso,
+      asignaturaId: data.curso.asignatura.id,
+      periodoId: data.curso.periodo.id,
+      docentes: data.docentes,
+      inscripciones: data.inscripciones,
+    })),
   crear: (datos: CrearCurso) =>
     authAxios.post<Curso>(BASE, datos).then((r) => r.data),
   actualizarEstado: (id: number, estado: string) =>
     authAxios.put(`${BASE}/${id}/estado`, { estado }).then(() => undefined),
+  actualizarHorario: (id: number, datos: ActualizarHorarioCurso) =>
+    authAxios.put(`${BASE}/${id}/horario`, datos).then(() => undefined),
   asignarDocente: (id: number, datos: AsignarDocenteCurso) =>
     authAxios.post(`${BASE}/${id}/docentes`, datos).then(() => undefined),
   guardarInscripcion: (id: number, datos: GuardarInscripcionCurso) =>
@@ -33,6 +45,4 @@ export const cursosService = {
     authAxios
       .put(`${BASE}/${id}/inscripciones/${encodeURIComponent(alumnoId)}`, datos)
       .then(() => undefined),
-  agregarHorario: (id: number, datos: CrearHorarioCurso) =>
-    authAxios.post(`${BASE}/${id}/horarios`, datos).then(() => undefined),
 };

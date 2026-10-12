@@ -119,6 +119,8 @@ export interface Curso {
   turno: 'TARDE' | 'MAÑANA' | 'NOCHE' | null
   horaInicio: string | null
   horaFin: string | null
+  diaSemana: string | null
+  aulaId: number | null
 }
 export interface CrearCurso {
   codigo: string
@@ -131,6 +133,14 @@ export interface CrearCurso {
   fechaInicio: string
   fechaFin: string
   turno: 'TARDE' | 'MAÑANA' | 'NOCHE' | ''
+  horaInicio: string
+  horaFin: string
+  diaSemana: string
+  aulaId: number
+}
+export interface ActualizarHorarioCurso {
+  aulaId: number
+  diaSemana: string
   horaInicio: string
   horaFin: string
 }
@@ -163,25 +173,9 @@ export interface GuardarInscripcionCurso {
   fechaResultado?: string | null
 }
 
-export interface HorarioCurso {
-  id: number
-  cursoId: number
-  aulaId: number
-  diaSemana: string
-  horaInicio: string
-  horaFin: string
-}
-export interface CrearHorarioCurso {
-  aulaId: number
-  diaSemana: string
-  horaInicio: string
-  horaFin: string
-}
-
 export interface CursoDetalle extends Curso {
   docentes: DocenteCurso[]
   inscripciones: InscripcionCurso[]
-  horarios: HorarioCurso[]
 }
 
 export interface PeriodoAcademico {

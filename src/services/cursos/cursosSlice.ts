@@ -3,8 +3,8 @@ import { extraerMensajeError } from '../api/erroresApi'
 import { cursosService } from './cursosService'
 import type {
   AsignarDocenteCurso,
+  ActualizarHorarioCurso,
   CrearCurso,
-  CrearHorarioCurso,
   Curso,
   CursoDetalle,
   GuardarInscripcionCurso,
@@ -71,6 +71,18 @@ export const actualizarEstadoCurso = createAsyncThunk<
   }
 })
 
+export const actualizarHorarioCurso = createAsyncThunk<
+  void,
+  { id: number; datos: ActualizarHorarioCurso },
+  { rejectValue: string }
+>('cursos/actualizarHorario', async ({ id, datos }, { rejectWithValue }) => {
+  try {
+    await cursosService.actualizarHorario(id, datos)
+  } catch (error) {
+    return rejectWithValue(extraerMensajeError(error))
+  }
+})
+
 export const asignarDocenteCurso = createAsyncThunk<
   void,
   { id: number; datos: AsignarDocenteCurso },
@@ -94,18 +106,6 @@ export const guardarInscripcionCurso = createAsyncThunk<
       await cursosService.actualizarInscripcion(id, datos.alumnoId, datos)
     }
     else await cursosService.guardarInscripcion(id, datos)
-  } catch (error) {
-    return rejectWithValue(extraerMensajeError(error))
-  }
-})
-
-export const agregarHorarioCurso = createAsyncThunk<
-  void,
-  { id: number; datos: CrearHorarioCurso },
-  { rejectValue: string }
->('cursos/agregarHorario', async ({ id, datos }, { rejectWithValue }) => {
-  try {
-    await cursosService.agregarHorario(id, datos)
   } catch (error) {
     return rejectWithValue(extraerMensajeError(error))
   }
@@ -156,9 +156,9 @@ const cursosSlice = createSlice({
         (action) =>
           [
             actualizarEstadoCurso.pending.type,
+            actualizarHorarioCurso.pending.type,
             asignarDocenteCurso.pending.type,
             guardarInscripcionCurso.pending.type,
-            agregarHorarioCurso.pending.type,
           ].includes(action.type),
         (state) => {
           state.error = null
@@ -168,9 +168,9 @@ const cursosSlice = createSlice({
         (action) =>
           [
             actualizarEstadoCurso.rejected.type,
+            actualizarHorarioCurso.rejected.type,
             asignarDocenteCurso.rejected.type,
             guardarInscripcionCurso.rejected.type,
-            agregarHorarioCurso.rejected.type,
           ].includes(action.type),
         (state, action: { payload?: string }) => {
           state.error = action.payload ?? 'No se pudo actualizar el curso'

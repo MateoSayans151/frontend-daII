@@ -4,9 +4,9 @@ import { useAppDispatch, useAppSelector } from '../../app/hooks'
 import { CalendarDatePicker } from '../../components/ui/CalendarDatePicker'
 import { EmptyState } from '../../components/ui/EmptyState'
 import {
-  agregarHorarioCurso,
   asignarDocenteCurso,
   actualizarEstadoCurso,
+  actualizarHorarioCurso,
   crearCurso,
   guardarInscripcionCurso,
   limpiarCursoSeleccionado,
@@ -28,12 +28,13 @@ const cursoVacio: CrearCurso = {
   turno: '',
   horaInicio: '',
   horaFin: '',
+  diaSemana: '',
+  aulaId: 0,
 }
 
 const periodoIds = Array.from({ length: 100 }, (_, index) => index + 1)
 const docenteVacio = { docenteId: '', rol: '' }
 const inscripcionVacia = { alumnoId: '', fechaInscripcion: '', estado: '' }
-const horarioVacio = { aulaId: '', diaSemana: 'LUNES', horaInicio: '', horaFin: '' }
 
 export function CursosPanel({ query, onNotify }: { query: string; onNotify: (value: string) => void }) {
   const dispatch = useAppDispatch()
@@ -82,6 +83,9 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
       !valores.fechaInicio ||
       !valores.fechaFin ||
       !valores.turno ||
+      !valores.diaSemana ||
+      !Number.isInteger(valores.aulaId) ||
+      valores.aulaId <= 0 ||
       !valores.horaInicio ||
       !valores.horaFin
     ) {
@@ -200,6 +204,17 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
                 <option value="NOCHE">NOCHE</option>
               </select>
             </label>
+            <label>Día de la semana
+              <select value={valores.diaSemana} onChange={(event) => setValores({ ...valores, diaSemana: event.target.value })}>
+                <option value="">Seleccioná un día...</option>
+                {['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'].map((dia, index) => (
+                  <option key={dia} value={dia}>{['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][index]}</option>
+                ))}
+              </select>
+            </label>
+            <label>ID de aula
+              <input type="number" min="1" value={valores.aulaId || ''} onChange={(event) => setValores({ ...valores, aulaId: Number(event.target.value) })} />
+            </label>
             <label>Hora de inicio
               <input type="time" value={valores.horaInicio} onChange={(event) => setValores({ ...valores, horaInicio: event.target.value })} />
             </label>
@@ -217,7 +232,7 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>Código</th><th>Asignatura</th><th>Período</th><th>Sede</th><th>Cupo</th><th>Fechas</th><th>Turno y horario</th><th>Estado</th><th /></tr>
+              <tr><th>Código</th><th>Asignatura</th><th>Período</th><th>Sede</th><th>Cupo</th><th>Fechas</th><th>Día y horario</th><th>Aula</th><th>Estado</th><th /></tr>
             </thead>
             <tbody>
               {rows.map((curso) => (
@@ -228,7 +243,8 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
                   <td>#{curso.sedeId}</td>
                   <td>{curso.cupoMaximo}</td>
                   <td>{curso.fechaInicio} – {curso.fechaFin}</td>
-                  <td>{curso.turno ?? 'Sin turno'}{curso.horaInicio && curso.horaFin ? ` · ${curso.horaInicio.slice(0, 5)}–${curso.horaFin.slice(0, 5)}` : ''}</td>
+                  <td>{curso.diaSemana ?? 'Sin día'} · {curso.turno ?? 'Sin turno'}{curso.horaInicio && curso.horaFin ? ` · ${curso.horaInicio.slice(0, 5)}–${curso.horaFin.slice(0, 5)}` : ''}</td>
+                  <td>{curso.aulaId ? `#${curso.aulaId}` : 'Sin aula'}</td>
                   <td>{curso.estado}</td>
                   <td><button className="secondary-button" type="button" onClick={() => abrirDetalle(curso.id)}>Administrar</button></td>
                 </tr>
@@ -252,6 +268,12 @@ function DetalleCurso({
 }) {
   const dispatch = useAppDispatch()
   const [estado, setEstado] = useState(curso.estado)
+  const [horario, setHorario] = useState({
+    aulaId: curso.aulaId ?? 0,
+    diaSemana: curso.diaSemana ?? '',
+    horaInicio: curso.horaInicio?.slice(0, 5) ?? '',
+    horaFin: curso.horaFin?.slice(0, 5) ?? '',
+  })
   const [docente, setDocente] = useState(docenteVacio)
   const [inscripcion, setInscripcion] = useState(inscripcionVacia)
   const [resultado, setResultado] = useState<GuardarInscripcionCurso>({
@@ -261,7 +283,6 @@ function DetalleCurso({
     notaFinal: null,
     fechaResultado: '',
   })
-  const [horario, setHorario] = useState(horarioVacio)
 
   const guardarEstado = async () => {
     if (!estado.trim()) {
@@ -271,6 +292,19 @@ function DetalleCurso({
     const action = await dispatch(actualizarEstadoCurso({ id: curso.id, estado }))
     if (actualizarEstadoCurso.fulfilled.match(action)) {
       onNotify('Estado del curso actualizado')
+      onRefresh()
+    }
+  }
+
+  const guardarHorario = async () => {
+    if (!Number.isInteger(horario.aulaId) || horario.aulaId <= 0 || !horario.diaSemana ||
+        !horario.horaInicio || !horario.horaFin || horario.horaInicio >= horario.horaFin) {
+      onNotify('Completá un día, aula y rango horario válidos.')
+      return
+    }
+    const action = await dispatch(actualizarHorarioCurso({ id: curso.id, datos: horario }))
+    if (actualizarHorarioCurso.fulfilled.match(action)) {
+      onNotify('Horario del curso actualizado')
       onRefresh()
     }
   }
@@ -321,28 +355,6 @@ function DetalleCurso({
     }
   }
 
-  const agregarHorario = async () => {
-    const aulaId = Number(horario.aulaId)
-    if (!Number.isInteger(aulaId) || aulaId <= 0 || !horario.horaInicio || !horario.horaFin || horario.horaInicio >= horario.horaFin) {
-      onNotify('Ingresá un aula y un rango horario válido.')
-      return
-    }
-    const action = await dispatch(agregarHorarioCurso({
-      id: curso.id,
-      datos: {
-        aulaId,
-        diaSemana: horario.diaSemana,
-        horaInicio: horario.horaInicio,
-        horaFin: horario.horaFin,
-      },
-    }))
-    if (agregarHorarioCurso.fulfilled.match(action)) {
-      setHorario(horarioVacio)
-      onNotify('Horario agregado correctamente')
-      onRefresh()
-    }
-  }
-
   const cargarResultado = (alumnoId: string) => {
     const alumno = curso.inscripciones.find((item) => item.alumnoId === alumnoId)
     if (!alumno) return
@@ -363,11 +375,28 @@ function DetalleCurso({
           <span>{curso.modalidad} · Cupo {curso.cupoMaximo}</span>
         </div>
         <p className="muted-copy">{curso.fechaInicio} – {curso.fechaFin}</p>
-        <p className="muted-copy">{curso.turno ?? 'Sin turno'}{curso.horaInicio && curso.horaFin ? ` · ${curso.horaInicio.slice(0, 5)}–${curso.horaFin.slice(0, 5)}` : ''}</p>
+        <p className="muted-copy">{curso.diaSemana ?? 'Sin día'} · {curso.turno ?? 'Sin turno'}{curso.horaInicio && curso.horaFin ? ` · ${curso.horaInicio.slice(0, 5)}–${curso.horaFin.slice(0, 5)}` : ''} · Aula {curso.aulaId ? `#${curso.aulaId}` : 'sin asignar'}</p>
         <div className="form-grid">
           <label>Estado<input value={estado} onChange={(event) => setEstado(event.target.value)} /></label>
         </div>
         <button className="secondary-button" type="button" onClick={guardarEstado}>Actualizar estado</button>
+      </article>
+      <article className="panel" style={{ marginTop: 18 }}>
+        <h2>Horario y aula</h2>
+        <div className="form-grid">
+          <label>Día de la semana
+            <select value={horario.diaSemana} onChange={(event) => setHorario({ ...horario, diaSemana: event.target.value })}>
+              <option value="">Seleccioná un día...</option>
+              {['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'].map((dia, index) => (
+                <option key={dia} value={dia}>{['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'][index]}</option>
+              ))}
+            </select>
+          </label>
+          <label>ID de aula<input type="number" min="1" value={horario.aulaId || ''} onChange={(event) => setHorario({ ...horario, aulaId: Number(event.target.value) })} /></label>
+          <label>Hora de inicio<input type="time" value={horario.horaInicio} onChange={(event) => setHorario({ ...horario, horaInicio: event.target.value })} /></label>
+          <label>Hora de fin<input type="time" value={horario.horaFin} onChange={(event) => setHorario({ ...horario, horaFin: event.target.value })} /></label>
+        </div>
+        <button className="secondary-button" type="button" onClick={guardarHorario}>Guardar horario</button>
       </article>
       <article className="panel" style={{ marginTop: 18 }}>
         <h2>Docentes</h2>
@@ -418,27 +447,6 @@ function DetalleCurso({
         <button className="secondary-button" type="button" onClick={guardarResultado}>Guardar resultado</button>
       </article>
 
-      <article className="panel" style={{ marginTop: 18 }}>
-        <h2>Horarios y aulas</h2>
-        <div className="table-wrap">
-          <table>
-            <thead><tr><th>Día</th><th>Horario</th><th>Aula</th></tr></thead>
-            <tbody>{curso.horarios.map((item) => <tr key={item.id}><td>{item.diaSemana}</td><td>{item.horaInicio} – {item.horaFin}</td><td>#{item.aulaId}</td></tr>)}</tbody>
-          </table>
-          {curso.horarios.length === 0 && <p className="muted-copy">No hay horarios registrados.</p>}
-        </div>
-        <div className="form-grid">
-          <label>ID de aula<input type="number" min="1" value={horario.aulaId} onChange={(event) => setHorario({ ...horario, aulaId: event.target.value })} /></label>
-          <label>Día de la semana
-            <select value={horario.diaSemana} onChange={(event) => setHorario({ ...horario, diaSemana: event.target.value })}>
-              {['LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO', 'DOMINGO'].map((dia) => <option key={dia} value={dia}>{dia}</option>)}
-            </select>
-          </label>
-          <label>Hora de inicio<input type="time" value={horario.horaInicio} onChange={(event) => setHorario({ ...horario, horaInicio: event.target.value })} /></label>
-          <label>Hora de fin<input type="time" value={horario.horaFin} onChange={(event) => setHorario({ ...horario, horaFin: event.target.value })} /></label>
-        </div>
-        <button className="secondary-button" type="button" onClick={agregarHorario}><Plus size={16} /> Agregar horario</button>
-      </article>
     </div>
   )
 }
