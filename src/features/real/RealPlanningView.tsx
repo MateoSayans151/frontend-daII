@@ -203,7 +203,7 @@ function SedesYAulasPanel({ query, onNotify }: { query: string; onNotify: (v: st
   const [formSede, setFormSede] = useState(false)
   const [nuevaSede, setNuevaSede] = useState({ nombre: '', direccion: '' })
   const [formAula, setFormAula] = useState(false)
-  const [nuevaAula, setNuevaAula] = useState({ codigo: '', capacidadMaxima: '' })
+  const [nuevaAula, setNuevaAula] = useState({ codigo: '', nombre: '', capacidadMaxima: '' })
 
   useEffect(() => { dispatch(listarSedes()) }, [dispatch])
   useEffect(() => { if (sedeId) dispatch(listarAulas(sedeId)) }, [dispatch, sedeId])
@@ -232,10 +232,13 @@ function SedesYAulasPanel({ query, onNotify }: { query: string; onNotify: (v: st
       onNotify('Seleccioná una capacidad máxima entre 1 y 100.')
       return
     }
-    const resultado = await dispatch(crearAula({ sedeId, datos: { codigo: nuevaAula.codigo, capacidadMaxima } }))
+    const resultado = await dispatch(crearAula({ sedeId, datos: {
+      codigo: nuevaAula.codigo.trim(), capacidadMaxima,
+      nombre: nuevaAula.nombre.trim(),
+    } }))
     if (crearAula.fulfilled.match(resultado)) {
       onNotify('Aula creada correctamente')
-      setNuevaAula({ codigo: '', capacidadMaxima: '' })
+      setNuevaAula({ codigo: '', nombre: '', capacidadMaxima: '' })
       setFormAula(false)
     }
   }
@@ -319,6 +322,7 @@ function SedesYAulasPanel({ query, onNotify }: { query: string; onNotify: (v: st
             <article className="panel" style={{ marginBottom: 18 }}>
               <div className="form-grid">
                 <label>Código<input value={nuevaAula.codigo} onChange={(e) => setNuevaAula({ ...nuevaAula, codigo: e.target.value })} placeholder="Ej. Aula 204" /></label>
+                <label>Nombre (opcional)<input maxLength={255} value={nuevaAula.nombre} onChange={(e) => setNuevaAula({ ...nuevaAula, nombre: e.target.value })} placeholder="Ej. Aula de informática" /></label>
                 <label>Capacidad máxima
                   <select value={nuevaAula.capacidadMaxima} onChange={(e) => setNuevaAula({ ...nuevaAula, capacidadMaxima: e.target.value })}>
                     <option value="">Seleccioná una capacidad...</option>
@@ -331,8 +335,8 @@ function SedesYAulasPanel({ query, onNotify }: { query: string; onNotify: (v: st
           )}
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Código</th><th>Capacidad</th><th>ID (para asignar)</th></tr></thead>
-              <tbody>{aulas.items.map((aula) => <tr key={aula.id}><td><strong>{aula.codigo}</strong></td><td>{aula.capacidadMaxima} personas</td><td><span className="code">#{aula.id}</span></td></tr>)}</tbody>
+              <thead><tr><th>Código</th><th>Nombre</th><th>Capacidad</th><th>ID (para asignar)</th></tr></thead>
+              <tbody>{aulas.items.map((aula) => <tr key={aula.id}><td><strong>{aula.codigo}</strong></td><td>{aula.nombre}</td><td>{aula.capacidadMaxima} personas</td><td><span className="code">#{aula.id}</span></td></tr>)}</tbody>
             </table>
             {!aulas.cargando && aulas.items.length === 0 && <EmptyState query="" />}
           </div>

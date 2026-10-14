@@ -79,12 +79,14 @@ export interface CrearSede {
 export interface Aula {
   id: number
   codigo: string
+  nombre: string
   capacidadMaxima: number
   sedeId: number
 }
 export interface CrearAula {
   codigo: string
   capacidadMaxima: number
+  nombre?: string
 }
 
 export interface Asignacion {
@@ -121,6 +123,8 @@ export interface Curso {
   horaFin: string | null
   diaSemana: string | null
   aulaId: number | null
+  sedeNombre: string
+  aulaNombre: string | null
 }
 export interface CrearCurso {
   codigo: string

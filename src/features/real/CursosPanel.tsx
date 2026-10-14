@@ -50,7 +50,7 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
   }, [dispatch, filtroPeriodo])
 
   const rows = items.filter((curso) =>
-    `${curso.codigo} ${curso.asignaturaId} ${curso.periodoId} ${curso.sedeId}`.toLowerCase().includes(query.toLowerCase()),
+    `${curso.codigo} ${curso.asignaturaId} ${curso.periodoId} ${curso.sedeId} ${curso.sedeNombre ?? ''} ${curso.aulaNombre ?? ''}`.toLowerCase().includes(query.toLowerCase()),
   )
 
   const abrirDetalle = (id: number) => {
@@ -240,11 +240,11 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
                   <td><strong>{curso.codigo}</strong><div className="muted-copy">#{curso.id} · {curso.modalidad}</div></td>
                   <td>#{curso.asignaturaId}</td>
                   <td>#{curso.periodoId}</td>
-                  <td>#{curso.sedeId}</td>
+                  <td>{curso.sedeNombre ?? `#${curso.sedeId}`}</td>
                   <td>{curso.cupoMaximo}</td>
                   <td>{curso.fechaInicio} – {curso.fechaFin}</td>
                   <td>{curso.diaSemana ?? 'Sin día'} · {curso.turno ?? 'Sin turno'}{curso.horaInicio && curso.horaFin ? ` · ${curso.horaInicio.slice(0, 5)}–${curso.horaFin.slice(0, 5)}` : ''}</td>
-                  <td>{curso.aulaId ? `#${curso.aulaId}` : 'Sin aula'}</td>
+                  <td>{curso.aulaNombre ?? (curso.aulaId ? `#${curso.aulaId}` : 'Sin aula')}</td>
                   <td>{curso.estado}</td>
                   <td><button className="secondary-button" type="button" onClick={() => abrirDetalle(curso.id)}>Administrar</button></td>
                 </tr>
@@ -371,11 +371,11 @@ function DetalleCurso({
     <div style={{ marginTop: 18 }}>
       <article className="panel">
         <div className="list-meta">
-          <div><h2>{curso.codigo}</h2><span>Curso #{curso.id} · Asignatura #{curso.asignaturaId} · Período #{curso.periodoId} · Sede #{curso.sedeId}</span></div>
+          <div><h2>{curso.codigo}</h2><span>Curso #{curso.id} · Asignatura #{curso.asignaturaId} · Período #{curso.periodoId} · {curso.sedeNombre ?? `Sede #${curso.sedeId}`}</span></div>
           <span>{curso.modalidad} · Cupo {curso.cupoMaximo}</span>
         </div>
         <p className="muted-copy">{curso.fechaInicio} – {curso.fechaFin}</p>
-        <p className="muted-copy">{curso.diaSemana ?? 'Sin día'} · {curso.turno ?? 'Sin turno'}{curso.horaInicio && curso.horaFin ? ` · ${curso.horaInicio.slice(0, 5)}–${curso.horaFin.slice(0, 5)}` : ''} · Aula {curso.aulaId ? `#${curso.aulaId}` : 'sin asignar'}</p>
+        <p className="muted-copy">{curso.diaSemana ?? 'Sin día'} · {curso.turno ?? 'Sin turno'}{curso.horaInicio && curso.horaFin ? ` · ${curso.horaInicio.slice(0, 5)}–${curso.horaFin.slice(0, 5)}` : ''} · Aula {curso.aulaNombre ?? (curso.aulaId ? `#${curso.aulaId}` : 'sin asignar')}</p>
         <div className="form-grid">
           <label>Estado<input value={estado} onChange={(event) => setEstado(event.target.value)} /></label>
         </div>
