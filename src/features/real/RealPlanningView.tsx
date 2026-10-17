@@ -6,7 +6,10 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { crearSede, listarSedes } from '../../services/sedes/sedesSlice'
 import { crearAula, listarAulas } from '../../services/aulas/aulasSlice'
 import { crearAsignacion, obtenerAgenda } from '../../services/asignaciones/asignacionesSlice'
+import { extraerMensajeError } from '../../services/api/erroresApi'
+import { catalogosService, type AulaCatalogo } from '../../services/catalogos/catalogosService'
 import { CursosPanel } from './CursosPanel'
+import type { Asignatura } from '../../types/api'
 import type { Screen } from '../../types/domain'
 import './RealPlanningView.css'
 
@@ -350,11 +353,37 @@ function AsignacionesPanel({ onNotify }: { onNotify: (v: string) => void }) {
   const dispatch = useAppDispatch()
   const { error } = useAppSelector((state) => state.asignaciones)
   const [valores, setValores] = useState(asignacionVacia)
+  const [asignaturas, setAsignaturas] = useState<Asignatura[]>([])
+  const [aulas, setAulas] = useState<AulaCatalogo[]>([])
+  const [cargandoCatalogos, setCargandoCatalogos] = useState(true)
+  const [errorCatalogos, setErrorCatalogos] = useState('')
+
+  useEffect(() => {
+    let activo = true
+    catalogosService.paraPlanificacion()
+      .then((datos) => {
+        if (!activo) return
+        setAsignaturas(datos.asignaturas)
+        setAulas(datos.aulas)
+      })
+      .catch((catalogosError) => {
+        if (activo) setErrorCatalogos(extraerMensajeError(catalogosError, 'No se pudieron cargar las asignaturas y aulas'))
+      })
+      .finally(() => {
+        if (activo) setCargandoCatalogos(false)
+      })
+    return () => { activo = false }
+  }, [])
 
   const crear = async () => {
-    const valoresNumericos = [valores.aulaId, valores.asignaturaId, valores.cantidadEstudiantes]
-    if (valoresNumericos.some((valor) => !Number.isInteger(Number(valor)) || Number(valor) < 1 || Number(valor) > 100)) {
-      onNotify('Seleccioná valores entre 1 y 100 para aula, asignatura y cantidad de estudiantes.')
+    const ids = [valores.aulaId, valores.asignaturaId]
+    const cantidadEstudiantes = Number(valores.cantidadEstudiantes)
+    if (ids.some((valor) => !Number.isInteger(Number(valor)) || Number(valor) < 1)) {
+      onNotify('Seleccioná un aula y una asignatura válidas.')
+      return
+    }
+    if (!Number.isInteger(cantidadEstudiantes) || cantidadEstudiantes < 1 || cantidadEstudiantes > 100) {
+      onNotify('Seleccioná una cantidad de estudiantes entre 1 y 100.')
       return
     }
     if (!valores.horaInicio || !valores.horaFin) {
@@ -380,19 +409,21 @@ function AsignacionesPanel({ onNotify }: { onNotify: (v: string) => void }) {
   }
 
   return <article className="panel">
-    <p className="muted-copy">Los IDs de aula y asignatura se ven en las tablas de "Sedes y aulas" y "Asignaturas".</p>
+    <p className="muted-copy">Elegí el aula y la asignatura por su código y nombre; el sistema enviará sus IDs al backend.</p>
+    {cargandoCatalogos && <p className="muted-copy">Cargando aulas y asignaturas...</p>}
+    {errorCatalogos && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {errorCatalogos}</div>}
     {error && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {error}</div>}
     <div className="form-grid assignment-form-grid">
-      <label>ID de aula
+      <label>Aula
         <select value={valores.aulaId} onChange={(e) => setValores({ ...valores, aulaId: e.target.value })}>
           <option value="">Seleccioná un aula...</option>
-          {opcionesAsignacion.map((id) => <option key={id} value={id}>{id}</option>)}
+          {aulas.map((aula) => <option key={aula.id} value={aula.id}>{aula.codigo} - {aula.nombre} ({aula.sedeNombre})</option>)}
         </select>
       </label>
-      <label>ID de asignatura
+      <label>Asignatura
         <select value={valores.asignaturaId} onChange={(e) => setValores({ ...valores, asignaturaId: e.target.value })}>
           <option value="">Seleccioná una asignatura...</option>
-          {opcionesAsignacion.map((id) => <option key={id} value={id}>{id}</option>)}
+          {asignaturas.map((asignatura) => <option key={asignatura.id} value={asignatura.id}>{asignatura.codigo} - {asignatura.nombre}</option>)}
         </select>
       </label>
       <CalendarDatePicker label="Fecha" value={valores.fecha} onChange={(fecha) => setValores({ ...valores, fecha })} />

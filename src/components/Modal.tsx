@@ -3,6 +3,11 @@ import { useState, type FormEvent } from 'react'
 import { CalendarDatePicker } from './ui/CalendarDatePicker'
 import { MockTag } from './ui/MockTag'
 import type { ModalKind, ModalTarget } from '../types/domain'
+import {
+  CODIGO_ACADEMICO_MENSAJE,
+  esCodigoAcademicoValido,
+  normalizarCodigoAcademico,
+} from '../utils/codigoAcademico'
 
 export type ModalValues = Record<string, string>
 
@@ -23,18 +28,18 @@ const fieldMap: Record<ModalKind, Field[]> = {
     { name: 'title', label: 'Título que otorga', placeholder: 'Ej. Ingeniero/a en Informática' },
     { name: 'faculty', label: 'Facultad', placeholder: 'Ej. Facultad de Ingeniería' },
     { name: 'duration', label: 'Duración', placeholder: 'Ej. 5 años' },
-    { name: 'code', label: 'Código', placeholder: 'Ej. ING-INF' },
+    { name: 'code', label: 'Código', placeholder: 'Ej. ARQ-001' },
   ],
   plan: [
     { name: 'name', label: 'Nombre del plan', placeholder: 'Ej. Plan de estudio 2026' },
     { name: 'career', label: 'Carrera', placeholder: 'Ej. Ingeniería en Informática' },
     { name: 'validFrom', label: 'Vigente desde', placeholder: 'Ej. Marzo 2026' },
     { name: 'subjectsCount', label: 'Cantidad de asignaturas', placeholder: 'Ej. 42', type: 'number', min: '1', max: '200' },
-    { name: 'code', label: 'Código', placeholder: 'Ej. PLAN-2026' },
+    { name: 'code', label: 'Código', placeholder: 'Ej. ARQ-001' },
   ],
   subject: [
     { name: 'name', label: 'Nombre de la asignatura', placeholder: 'Ej. Desarrollo de Aplicaciones II' },
-    { name: 'code', label: 'Código', placeholder: 'Ej. INF-306' },
+    { name: 'code', label: 'Código', placeholder: 'Ej. ARQ1-001' },
     { name: 'career', label: 'Carrera', placeholder: 'Ej. Ingeniería en Informática' },
     { name: 'plan', label: 'Plan de estudio', placeholder: 'Ej. Plan 2026' },
     { name: 'year', label: 'Año / nivel', placeholder: 'Ej. 3.º año' },
@@ -83,6 +88,9 @@ function validate(values: ModalValues, fields: Field[]) {
   const errors: Record<string, string> = {}
   fields.forEach((field) => {
     if (!values[field.name]?.trim()) errors[field.name] = 'Este campo es obligatorio.'
+    if (field.name === 'code' && values[field.name] && !esCodigoAcademicoValido(values[field.name])) {
+      errors[field.name] = CODIGO_ACADEMICO_MENSAJE
+    }
     if (field.type === 'number' && values[field.name]) {
       const number = Number(values[field.name])
       if (!Number.isFinite(number) || number < Number(field.min) || number > Number(field.max)) errors[field.name] = `Ingresá un valor entre ${field.min} y ${field.max}.`
@@ -100,7 +108,7 @@ export function Modal({ target, initialValues = {}, close, onSave }: ModalProps)
   const title = target.id ? `Editar ${titles[target.kind].noun}` : titles[target.kind].create
 
   const update = (name: string, value: string) => {
-    setValues((current) => ({ ...current, [name]: value }))
+    setValues((current) => ({ ...current, [name]: name === 'code' ? normalizarCodigoAcademico(value) : value }))
     setErrors((current) => ({ ...current, [name]: '' }))
     setSubmitError('')
   }

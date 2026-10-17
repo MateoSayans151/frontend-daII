@@ -19,6 +19,11 @@ import {
 } from '../../services/correlatividades/correlatividadesSlice'
 import type { Asignatura, Carrera, CrearCarrera, EstadoAcademico, PlanDeEstudio, TipoCorrelatividad } from '../../types/api'
 import type { Screen } from '../../types/domain'
+import {
+  CODIGO_ACADEMICO_MENSAJE,
+  esCodigoAcademicoValido,
+  normalizarCodigoAcademico,
+} from '../../utils/codigoAcademico'
 
 type Props = { screen: Screen; query: string; setQuery: (value: string) => void; onNotify: (value: string) => void }
 
@@ -93,6 +98,10 @@ function CarrerasPanel({ query, setQuery, onNotify }: { query: string; setQuery:
   }
 
   const guardar = async () => {
+    if (!esCodigoAcademicoValido(valores.codigo)) {
+      onNotify(CODIGO_ACADEMICO_MENSAJE)
+      return
+    }
     if (formAbierto === 'nueva') {
       const resultado = await dispatch(crearCarrera(valores))
       if (crearCarrera.fulfilled.match(resultado)) {
@@ -122,7 +131,7 @@ function CarrerasPanel({ query, setQuery, onNotify }: { query: string; setQuery:
       <article className="panel" style={{ marginBottom: 18 }}>
         <div className="panel-header"><div><h2>{formAbierto === 'nueva' ? 'Nueva carrera' : 'Editar carrera'}</h2></div><button className="text-button" onClick={() => setFormAbierto(null)}><X size={16} /></button></div>
         <div className="form-grid">
-          <label>Código<input value={valores.codigo} onChange={(e) => setValores({ ...valores, codigo: e.target.value })} placeholder="Ej. ING-INF" /></label>
+          <label>Código<input value={valores.codigo} onChange={(e) => setValores({ ...valores, codigo: normalizarCodigoAcademico(e.target.value) })} placeholder="Ej. ARQ-001" pattern="[A-Z]{3}[0-9]?-[0-9]{3}" title={CODIGO_ACADEMICO_MENSAJE} /><small>Formato: ARQ-001 o ARQ1-001</small></label>
           <label>Nombre<input value={valores.nombre} onChange={(e) => setValores({ ...valores, nombre: e.target.value })} placeholder="Ej. Ingeniería en Informática" /></label>
           <label>Facultad<input value={valores.facultad} onChange={(e) => setValores({ ...valores, facultad: e.target.value })} placeholder="Ej. Facultad de Ingeniería" /></label>
           <label>Duración<input value={valores.duracion} onChange={(e) => setValores({ ...valores, duracion: e.target.value })} placeholder="Ej. 5 años" /></label>
@@ -175,6 +184,10 @@ function PlanesPanel({ onNotify }: { onNotify: (value: string) => void }) {
 
   const crear = async () => {
     if (!carreraId) return
+    if (!esCodigoAcademicoValido(valores.codigo)) {
+      onNotify(CODIGO_ACADEMICO_MENSAJE)
+      return
+    }
     const resultado = await dispatch(crearPlanDeEstudio({
       carreraId,
       datos: { ...valores, cantidadAsignaturas: Number(valores.cantidadAsignaturas) },
@@ -231,7 +244,7 @@ function PlanesPanel({ onNotify }: { onNotify: (value: string) => void }) {
           {formAbierto && (
             <article className="panel" style={{ marginBottom: 18 }}>
               <div className="form-grid">
-                <label>Código<input value={valores.codigo} onChange={(e) => setValores({ ...valores, codigo: e.target.value })} placeholder="Ej. PLAN-2026" /></label>
+                <label>Código<input value={valores.codigo} onChange={(e) => setValores({ ...valores, codigo: normalizarCodigoAcademico(e.target.value) })} placeholder="Ej. ARQ-001" pattern="[A-Z]{3}[0-9]?-[0-9]{3}" title={CODIGO_ACADEMICO_MENSAJE} /><small>Formato: ARQ-001 o ARQ1-001</small></label>
                 <label>Nombre<input value={valores.nombre} onChange={(e) => setValores({ ...valores, nombre: e.target.value })} placeholder="Ej. Plan de estudio 2026" /></label>
                 <CalendarDatePicker label="Vigente desde" value={valores.vigenciaDesde} onChange={(vigenciaDesde) => setValores({ ...valores, vigenciaDesde })} />
                 <label>Cantidad de asignaturas<input type="number" min="0" value={valores.cantidadAsignaturas} onChange={(e) => setValores({ ...valores, cantidadAsignaturas: e.target.value })} /></label>
@@ -292,6 +305,10 @@ function AsignaturasPanel({ onNotify }: { onNotify: (value: string) => void }) {
 
   const crear = async () => {
     if (!planId) return
+    if (!esCodigoAcademicoValido(valores.codigo)) {
+      onNotify(CODIGO_ACADEMICO_MENSAJE)
+      return
+    }
     if (valores.anio === '') {
       onNotify('Seleccioná el año de cursada.')
       return
@@ -355,7 +372,7 @@ function AsignaturasPanel({ onNotify }: { onNotify: (value: string) => void }) {
           {formAbierto && (
             <article className="panel" style={{ marginBottom: 18 }}>
               <div className="form-grid">
-                <label>Código<input value={valores.codigo} onChange={(e) => setValores({ ...valores, codigo: e.target.value })} placeholder="Ej. INF-306" /></label>
+                <label>Código<input value={valores.codigo} onChange={(e) => setValores({ ...valores, codigo: normalizarCodigoAcademico(e.target.value) })} placeholder="Ej. ARQ1-001" pattern="[A-Z]{3}[0-9]?-[0-9]{3}" title={CODIGO_ACADEMICO_MENSAJE} /><small>Formato: ARQ-001 o ARQ1-001</small></label>
                 <label>Nombre<input value={valores.nombre} onChange={(e) => setValores({ ...valores, nombre: e.target.value })} placeholder="Ej. Desarrollo de Aplicaciones II" /></label>
                 <label>Año
                   <select value={valores.anio} onChange={(e) => setValores({ ...valores, anio: e.target.value })}>

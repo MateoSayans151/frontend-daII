@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../../app/hooks'
 import { CalendarDatePicker } from '../../components/ui/CalendarDatePicker'
 import { EmptyState } from '../../components/ui/EmptyState'
+import { extraerMensajeError } from '../../services/api/erroresApi'
+import { catalogosService, type AulaCatalogo } from '../../services/catalogos/catalogosService'
 import {
   asignarDocenteCurso,
   actualizarEstadoCurso,
@@ -13,7 +15,12 @@ import {
   listarCursos,
   obtenerCurso,
 } from '../../services/cursos/cursosSlice'
-import type { CursoDetalle, CrearCurso, GuardarInscripcionCurso } from '../../types/api'
+import type { Asignatura, CursoDetalle, CrearCurso, GuardarInscripcionCurso, PeriodoAcademico, Sede } from '../../types/api'
+import {
+  CODIGO_ACADEMICO_MENSAJE,
+  esCodigoAcademicoValido,
+  normalizarCodigoAcademico,
+} from '../../utils/codigoAcademico'
 
 const cursoVacio: CrearCurso = {
   codigo: '',
@@ -32,7 +39,6 @@ const cursoVacio: CrearCurso = {
   aulaId: 0,
 }
 
-const periodoIds = Array.from({ length: 100 }, (_, index) => index + 1)
 const docenteVacio = { docenteId: '', rol: '' }
 const inscripcionVacia = { alumnoId: '', fechaInscripcion: '', estado: '' }
 
@@ -44,10 +50,33 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
   const [formAbierto, setFormAbierto] = useState(false)
   const [valores, setValores] = useState<CrearCurso>(cursoVacio)
   const [cursoAbiertoId, setCursoAbiertoId] = useState<number | null>(null)
+  const [catalogos, setCatalogos] = useState<{
+    asignaturas: Asignatura[]
+    periodos: PeriodoAcademico[]
+    sedes: Sede[]
+    aulas: AulaCatalogo[]
+  }>({ asignaturas: [], periodos: [], sedes: [], aulas: [] })
+  const [cargandoCatalogos, setCargandoCatalogos] = useState(true)
+  const [errorCatalogos, setErrorCatalogos] = useState('')
 
   useEffect(() => {
     dispatch(listarCursos(filtroPeriodo))
   }, [dispatch, filtroPeriodo])
+
+  useEffect(() => {
+    let activo = true
+    catalogosService.paraPlanificacion()
+      .then((datos) => {
+        if (activo) setCatalogos(datos)
+      })
+      .catch((error) => {
+        if (activo) setErrorCatalogos(extraerMensajeError(error, 'No se pudieron cargar los datos para crear cursos'))
+      })
+      .finally(() => {
+        if (activo) setCargandoCatalogos(false)
+      })
+    return () => { activo = false }
+  }, [])
 
   const rows = items.filter((curso) =>
     `${curso.codigo} ${curso.asignaturaId} ${curso.periodoId} ${curso.sedeId} ${curso.sedeNombre ?? ''} ${curso.aulaNombre ?? ''}`.toLowerCase().includes(query.toLowerCase()),
@@ -59,21 +88,24 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
   }
 
   const aplicarFiltroPeriodo = () => {
-    if (periodoId && (!Number.isInteger(Number(periodoId)) || Number(periodoId) < 1 || Number(periodoId) > 100)) {
-      onNotify('Ingresá un ID de período entre 1 y 100.')
+    if (periodoId && (!Number.isInteger(Number(periodoId)) || Number(periodoId) < 1)) {
+      onNotify('Seleccioná un período válido.')
       return
     }
     setFiltroPeriodo(periodoId ? Number(periodoId) : undefined)
   }
 
   const crear = async () => {
+    if (!esCodigoAcademicoValido(valores.codigo)) {
+      onNotify(CODIGO_ACADEMICO_MENSAJE)
+      return
+    }
     if (
       !valores.codigo.trim() ||
       !Number.isInteger(valores.asignaturaId) ||
       valores.asignaturaId <= 0 ||
       !Number.isInteger(valores.periodoId) ||
       valores.periodoId < 1 ||
-      valores.periodoId > 100 ||
       !Number.isInteger(valores.sedeId) ||
       valores.sedeId <= 0 ||
       !valores.modalidad.trim() ||
@@ -108,6 +140,8 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
       dispatch(listarCursos(filtroPeriodo))
     }
   }
+
+  const aulasDeSede = catalogos.aulas.filter((aula) => aula.sedeId === valores.sedeId)
 
   if (cursoAbiertoId !== null) {
     const curso = seleccionado?.id === cursoAbiertoId ? seleccionado : null
@@ -147,7 +181,11 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
               onChange={(event) => setPeriodoId(event.target.value)}
             >
               <option value="">Todos los períodos</option>
-              {periodoIds.map((id) => <option key={id} value={id}>{id}</option>)}
+              {catalogos.periodos.map((periodo) => (
+                <option key={periodo.id} value={periodo.id}>
+                  {periodo.anio}-{periodo.numero} - {periodo.numero}° cuatrimestre
+                </option>
+              ))}
             </select>
           </label>
           <button className="secondary-button" type="button" onClick={aplicarFiltroPeriodo} style={{ height: 42, paddingBlock: 0 }}>
@@ -156,29 +194,38 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
         </div>
       </div>
       {error && <ErrorMessage message={error} />}
+      {errorCatalogos && <ErrorMessage message={errorCatalogos} />}
       {formAbierto && (
         <article className="panel" style={{ marginBottom: 18 }}>
           <h2>Nuevo curso</h2>
-          <p className="muted-copy">Ingresá los IDs de asignatura, período y sede registrados en el sistema.</p>
+          <p className="muted-copy">Elegí los registros relacionados; el sistema enviará sus IDs al backend.</p>
+          {cargandoCatalogos && <p className="muted-copy">Cargando asignaturas, períodos, sedes y aulas...</p>}
           <div className="form-grid">
             <label>
               Código
-              <input value={valores.codigo} onChange={(event) => setValores({ ...valores, codigo: event.target.value })} />
+              <input value={valores.codigo} onChange={(event) => setValores({ ...valores, codigo: normalizarCodigoAcademico(event.target.value) })} placeholder="Ej. ARQ1-001" pattern="[A-Z]{3}[0-9]?-[0-9]{3}" title={CODIGO_ACADEMICO_MENSAJE} />
+              <small>Formato: ARQ-001 o ARQ1-001</small>
             </label>
             <label>
-              ID de asignatura
-              <input type="number" min="1" value={valores.asignaturaId || ''} onChange={(event) => setValores({ ...valores, asignaturaId: Number(event.target.value) })} />
-            </label>
-            <label>
-              ID de período
-              <select value={valores.periodoId || ''} onChange={(event) => setValores({ ...valores, periodoId: Number(event.target.value) })}>
-                <option value="">Seleccioná un período...</option>
-                {periodoIds.map((id) => <option key={id} value={id}>{id}</option>)}
+              Asignatura
+              <select value={valores.asignaturaId || ''} onChange={(event) => setValores({ ...valores, asignaturaId: Number(event.target.value) })}>
+                <option value="">Seleccioná una asignatura...</option>
+                {catalogos.asignaturas.map((asignatura) => <option key={asignatura.id} value={asignatura.id}>{asignatura.codigo} - {asignatura.nombre}</option>)}
               </select>
             </label>
             <label>
-              ID de sede
-              <input type="number" min="1" value={valores.sedeId || ''} onChange={(event) => setValores({ ...valores, sedeId: Number(event.target.value) })} />
+              Período
+              <select value={valores.periodoId || ''} onChange={(event) => setValores({ ...valores, periodoId: Number(event.target.value) })}>
+                <option value="">Seleccioná un período...</option>
+                {catalogos.periodos.map((periodo) => <option key={periodo.id} value={periodo.id}>{periodo.anio}-{periodo.numero} - {periodo.numero}° cuatrimestre</option>)}
+              </select>
+            </label>
+            <label>
+              Sede
+              <select value={valores.sedeId || ''} onChange={(event) => setValores({ ...valores, sedeId: Number(event.target.value), aulaId: 0 })}>
+                <option value="">Seleccioná una sede...</option>
+                {catalogos.sedes.map((sede) => <option key={sede.id} value={sede.id}>{sede.nombre} - {sede.direccion}</option>)}
+              </select>
             </label>
             <label>
               Modalidad
@@ -212,8 +259,11 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
                 ))}
               </select>
             </label>
-            <label>ID de aula
-              <input type="number" min="1" value={valores.aulaId || ''} onChange={(event) => setValores({ ...valores, aulaId: Number(event.target.value) })} />
+            <label>Aula
+              <select value={valores.aulaId || ''} onChange={(event) => setValores({ ...valores, aulaId: Number(event.target.value) })} disabled={!valores.sedeId}>
+                <option value="">Seleccioná un aula...</option>
+                {aulasDeSede.map((aula) => <option key={aula.id} value={aula.id}>{aula.codigo} - {aula.nombre}</option>)}
+              </select>
             </label>
             <label>Hora de inicio
               <input type="time" value={valores.horaInicio} onChange={(event) => setValores({ ...valores, horaInicio: event.target.value })} />
