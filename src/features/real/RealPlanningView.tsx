@@ -365,6 +365,7 @@ function AsignacionesPanel({ onNotify }: { onNotify: (v: string) => void }) {
         if (!activo) return
         setAsignaturas(datos.asignaturas)
         setAulas(datos.aulas)
+        setErrorCatalogos(datos.advertencias.join(' '))
       })
       .catch((catalogosError) => {
         if (activo) setErrorCatalogos(extraerMensajeError(catalogosError, 'No se pudieron cargar las asignaturas y aulas'))
@@ -417,13 +418,13 @@ function AsignacionesPanel({ onNotify }: { onNotify: (v: string) => void }) {
       <label>Aula
         <select value={valores.aulaId} onChange={(e) => setValores({ ...valores, aulaId: e.target.value })}>
           <option value="">Seleccioná un aula...</option>
-          {aulas.map((aula) => <option key={aula.id} value={aula.id}>{aula.codigo} - {aula.nombre} ({aula.sedeNombre})</option>)}
+          {aulas.map((aula) => <option key={aula.id} value={aula.id}>{aula.codigo}: {aula.nombre} ({aula.sedeNombre})</option>)}
         </select>
       </label>
       <label>Asignatura
         <select value={valores.asignaturaId} onChange={(e) => setValores({ ...valores, asignaturaId: e.target.value })}>
           <option value="">Seleccioná una asignatura...</option>
-          {asignaturas.map((asignatura) => <option key={asignatura.id} value={asignatura.id}>{asignatura.codigo} - {asignatura.nombre}</option>)}
+          {asignaturas.map((asignatura) => <option key={asignatura.id} value={asignatura.id}>{asignatura.codigo}: {asignatura.nombre}</option>)}
         </select>
       </label>
       <CalendarDatePicker label="Fecha" value={valores.fecha} onChange={(fecha) => setValores({ ...valores, fecha })} />

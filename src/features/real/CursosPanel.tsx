@@ -67,7 +67,10 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
     let activo = true
     catalogosService.paraPlanificacion()
       .then((datos) => {
-        if (activo) setCatalogos(datos)
+        if (activo) {
+          setCatalogos(datos)
+          setErrorCatalogos(datos.advertencias.join(' '))
+        }
       })
       .catch((error) => {
         if (activo) setErrorCatalogos(extraerMensajeError(error, 'No se pudieron cargar los datos para crear cursos'))
@@ -209,21 +212,21 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
             <label>
               Asignatura
               <select value={valores.asignaturaId || ''} onChange={(event) => setValores({ ...valores, asignaturaId: Number(event.target.value) })}>
-                <option value="">Seleccioná una asignatura...</option>
-                {catalogos.asignaturas.map((asignatura) => <option key={asignatura.id} value={asignatura.id}>{asignatura.codigo} - {asignatura.nombre}</option>)}
+                <option value="">{catalogos.asignaturas.length ? 'Seleccioná una asignatura...' : 'No hay asignaturas disponibles'}</option>
+                {catalogos.asignaturas.map((asignatura) => <option key={asignatura.id} value={asignatura.id}>{asignatura.codigo}: {asignatura.nombre}</option>)}
               </select>
             </label>
             <label>
               Período
               <select value={valores.periodoId || ''} onChange={(event) => setValores({ ...valores, periodoId: Number(event.target.value) })}>
-                <option value="">Seleccioná un período...</option>
+                <option value="">{catalogos.periodos.length ? 'Seleccioná un período...' : 'No hay períodos disponibles'}</option>
                 {catalogos.periodos.map((periodo) => <option key={periodo.id} value={periodo.id}>{periodo.anio}-{periodo.numero} - {periodo.numero}° cuatrimestre</option>)}
               </select>
             </label>
             <label>
               Sede
               <select value={valores.sedeId || ''} onChange={(event) => setValores({ ...valores, sedeId: Number(event.target.value), aulaId: 0 })}>
-                <option value="">Seleccioná una sede...</option>
+                <option value="">{catalogos.sedes.length ? 'Seleccioná una sede...' : 'No hay sedes disponibles'}</option>
                 {catalogos.sedes.map((sede) => <option key={sede.id} value={sede.id}>{sede.nombre} - {sede.direccion}</option>)}
               </select>
             </label>
@@ -261,8 +264,8 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
             </label>
             <label>Aula
               <select value={valores.aulaId || ''} onChange={(event) => setValores({ ...valores, aulaId: Number(event.target.value) })} disabled={!valores.sedeId}>
-                <option value="">Seleccioná un aula...</option>
-                {aulasDeSede.map((aula) => <option key={aula.id} value={aula.id}>{aula.codigo} - {aula.nombre}</option>)}
+                <option value="">{!valores.sedeId ? 'Primero seleccioná una sede...' : aulasDeSede.length ? 'Seleccioná un aula...' : 'No hay aulas para esta sede'}</option>
+                {aulasDeSede.map((aula) => <option key={aula.id} value={aula.id}>{aula.codigo}: {aula.nombre}</option>)}
               </select>
             </label>
             <label>Hora de inicio
