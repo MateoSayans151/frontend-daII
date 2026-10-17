@@ -14,10 +14,19 @@ Frontend del módulo 9 del TPO de Desarrollo de Aplicaciones II.
 2. Ejecutá `npm install`.
 3. Ejecutá `npm run dev`.
 
-Configurá `VITE_CORE_URL` con la URL base de CORE (por ejemplo, `https://core`). El portal
-inicia sesión en CORE y consume este módulo mediante el gateway
-`/api/v1/academic/*`; no se conecta al backend de forma directa. El access token queda sólo
-en memoria y el refresh token lo administra CORE en una cookie `HttpOnly`.
+En el entorno local actual, configurá `VITE_API_URL=http://localhost:8080`. El cliente
+consume directamente las rutas `/api/**` del backend y envía la cookie `JSESSIONID`
+mediante `withCredentials`.
+
+La integración objetivo todavía pendiente usará `VITE_CORE_URL`, iniciará sesión en CORE
+y consumirá el módulo mediante el gateway `/api/v1/academic/*`. En ese estado, el access
+token quedará sólo en memoria y CORE administrará el refresh token en una cookie
+`HttpOnly`. No se debe describir este flujo objetivo como si ya estuviera implementado.
+
+El inventario y las brechas de integración están documentados en el
+[`contrato del backend`](../Backend/Backend/docs/CONTRATO_PORTALES_ALUMNOS_Y_DOCENCIA.md)
+y en el
+[`mapa interactivo`](../Backend/Backend/docs/arquitectura-interactiva/index.html).
 
 ## Estructura del frontend
 
