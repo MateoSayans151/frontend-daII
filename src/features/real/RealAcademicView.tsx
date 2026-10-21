@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../../app/hooks'
 import { CalendarDatePicker } from '../../components/ui/CalendarDatePicker'
 import { EmptyState } from '../../components/ui/EmptyState'
+import { SurfaceSkeleton } from '../../components/ui/SurfaceSkeleton'
 import { AcademicSelect, type AcademicSelectOption } from '../../components/ui/AcademicSelect'
 import { Toolbar } from '../../components/ui/Toolbar'
 import {
@@ -152,26 +153,28 @@ function CarrerasPanel({ query, setQuery, onNotify }: { query: string; setQuery:
     )}
 
     <div className="list-meta"><span>{rows.length} resultados</span></div>
-    <div className="table-wrap">
-      <table>
-        <thead><tr><th>Código</th><th>Nombre</th><th>Facultad</th><th>Estado</th><th aria-label="Acciones" /></tr></thead>
-        <tbody>
-          {rows.map((carrera) => (
-            <tr key={carrera.id}>
-              <td><span className="code">{carrera.codigo}</span></td>
-              <td><strong>{carrera.nombre}</strong><small>{carrera.titulo} · {carrera.duracion}</small></td>
-              <td>{carrera.facultad}</td>
-              <td><span className={`status ${estadoClase[carrera.estado]}`}><i />{carrera.estado}</span></td>
-              <td>
-                <button className="row-action" onClick={() => abrirEdicion(carrera)} aria-label={`Editar ${carrera.nombre}`}><PencilSimple size={17} /></button>
-                {carrera.estado !== 'INACTIVA' && <button className="row-action danger" onClick={() => desactivar(carrera.id)} aria-label={`Desactivar ${carrera.nombre}`}><Trash size={17} /></button>}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {!cargando && rows.length === 0 && <EmptyState query={query} />}
-    </div>
+    {cargando && items.length === 0 ? <SurfaceSkeleton label="carreras" /> : (
+      <div className="table-wrap">
+        <table>
+          <thead><tr><th>Código</th><th>Nombre</th><th>Facultad</th><th>Estado</th><th aria-label="Acciones" /></tr></thead>
+          <tbody>
+            {rows.map((carrera) => (
+              <tr key={carrera.id}>
+                <td><span className="code">{carrera.codigo}</span></td>
+                <td><strong>{carrera.nombre}</strong><small>{carrera.titulo} · {carrera.duracion}</small></td>
+                <td>{carrera.facultad}</td>
+                <td><span className={`status ${estadoClase[carrera.estado]}`}><i />{carrera.estado}</span></td>
+                <td>
+                  <button className="row-action" onClick={() => abrirEdicion(carrera)} aria-label={`Editar ${carrera.nombre}`}><PencilSimple size={17} /></button>
+                  {carrera.estado !== 'INACTIVA' && <button className="row-action danger" onClick={() => desactivar(carrera.id)} aria-label={`Desactivar ${carrera.nombre}`}><Trash size={17} /></button>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!cargando && rows.length === 0 && <EmptyState query={query} />}
+      </div>
+    )}
   </>
 }
 
@@ -267,23 +270,25 @@ function PlanesPanel({ onNotify }: { onNotify: (value: string) => void }) {
             </article>
           )}
 
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Código</th><th>Nombre</th><th>Vigente desde</th><th>Asignaturas</th><th>Estado</th></tr></thead>
-              <tbody>
-                {planes.items.map((plan) => (
-                  <tr key={plan.id}>
-                    <td><span className="code">{plan.codigo}</span></td>
-                    <td><strong>{plan.nombre}</strong></td>
-                    <td>{plan.vigenciaDesde}</td>
-                    <td>{plan.cantidadAsignaturas}</td>
-                    <td><span className={`status ${estadoClase[plan.estado]}`}><i />{plan.estado}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {!planes.cargando && planes.items.length === 0 && <EmptyState query="" />}
-          </div>
+          {planes.cargando && planes.items.length === 0 ? <SurfaceSkeleton label="planes de estudio" /> : (
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>Código</th><th>Nombre</th><th>Vigente desde</th><th>Asignaturas</th><th>Estado</th></tr></thead>
+                <tbody>
+                  {planes.items.map((plan) => (
+                    <tr key={plan.id}>
+                      <td><span className="code">{plan.codigo}</span></td>
+                      <td><strong>{plan.nombre}</strong></td>
+                      <td>{plan.vigenciaDesde}</td>
+                      <td>{plan.cantidadAsignaturas}</td>
+                      <td><span className={`status ${estadoClase[plan.estado]}`}><i />{plan.estado}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {!planes.cargando && planes.items.length === 0 && <EmptyState query="" />}
+            </div>
+          )}
         </>}
   </>
 }
@@ -415,24 +420,26 @@ function AsignaturasPanel({ onNotify }: { onNotify: (value: string) => void }) {
             </article>
           )}
 
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Código</th><th>Nombre</th><th>Año</th><th>Créditos</th><th>Carga horaria</th><th>Estado</th></tr></thead>
-              <tbody>
-                {asignaturas.items.map((asignatura) => (
-                  <tr key={asignatura.id}>
-                    <td><span className="code">{asignatura.codigo}</span></td>
-                    <td><strong>{asignatura.nombre}</strong></td>
-                    <td>{asignatura.anio}</td>
-                    <td>{asignatura.creditos}</td>
-                    <td>{asignatura.cargaHoraria} hs</td>
-                    <td><span className={`status ${estadoClase[asignatura.estado]}`}><i />{asignatura.estado}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {!asignaturas.cargando && asignaturas.items.length === 0 && <EmptyState query="" />}
-          </div>
+          {asignaturas.cargando && asignaturas.items.length === 0 ? <SurfaceSkeleton label="asignaturas" /> : (
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>Código</th><th>Nombre</th><th>Año</th><th>Créditos</th><th>Carga horaria</th><th>Estado</th></tr></thead>
+                <tbody>
+                  {asignaturas.items.map((asignatura) => (
+                    <tr key={asignatura.id}>
+                      <td><span className="code">{asignatura.codigo}</span></td>
+                      <td><strong>{asignatura.nombre}</strong></td>
+                      <td>{asignatura.anio}</td>
+                      <td>{asignatura.creditos}</td>
+                      <td>{asignatura.cargaHoraria} hs</td>
+                      <td><span className={`status ${estadoClase[asignatura.estado]}`}><i />{asignatura.estado}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {!asignaturas.cargando && asignaturas.items.length === 0 && <EmptyState query="" />}
+            </div>
+          )}
         </>}
   </>
 }

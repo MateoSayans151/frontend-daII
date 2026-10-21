@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../../app/hooks'
 import { CalendarDatePicker } from '../../components/ui/CalendarDatePicker'
 import { EmptyState } from '../../components/ui/EmptyState'
+import { SurfaceSkeleton } from '../../components/ui/SurfaceSkeleton'
 import { extraerMensajeError } from '../../services/api/erroresApi'
 import { catalogosService, type AulaCatalogo } from '../../services/catalogos/catalogosService'
 import {
@@ -64,6 +65,7 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
   }>({ asignaturas: [], periodos: [], sedes: [], aulas: [] })
   const [cargandoCatalogos, setCargandoCatalogos] = useState(true)
   const [errorCatalogos, setErrorCatalogos] = useState('')
+  const [errorAulas, setErrorAulas] = useState('')
 
   useEffect(() => {
     dispatch(listarCursos(filtroPeriodo))
@@ -76,10 +78,15 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
         if (activo) {
           setCatalogos(datos)
           setErrorCatalogos(datos.advertencias.join(' '))
+          setErrorAulas(datos.advertencias.filter((advertencia) => advertencia.toLowerCase().includes('aulas')).join(' '))
         }
       })
       .catch((error) => {
-        if (activo) setErrorCatalogos(extraerMensajeError(error, 'No se pudieron cargar los datos para crear cursos'))
+        if (activo) {
+          const mensaje = extraerMensajeError(error, 'No se pudieron cargar los datos para crear cursos')
+          setErrorCatalogos(mensaje)
+          setErrorAulas(mensaje)
+        }
       })
       .finally(() => {
         if (activo) setCargandoCatalogos(false)
@@ -166,8 +173,17 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
           <ArrowLeft size={16} /> Volver a cursos
         </button>
         {error && <ErrorMessage message={error} />}
-        {cargandoDetalle && <p className="muted-copy">Consultando curso...</p>}
-        {curso && <DetalleCurso curso={curso} onNotify={onNotify} onRefresh={() => dispatch(obtenerCurso(curso.id))} />}
+        {cargandoDetalle && !curso && <SurfaceSkeleton label="el curso" rows={3} />}
+        {curso && (
+          <DetalleCurso
+            curso={curso}
+            aulas={catalogos.aulas}
+            cargandoAulas={cargandoCatalogos}
+            errorAulas={errorAulas}
+            onNotify={onNotify}
+            onRefresh={() => dispatch(obtenerCurso(curso.id))}
+          />
+        )}
       </section>
     )
   }
@@ -204,7 +220,7 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
       {error && <ErrorMessage message={error} />}
       {errorCatalogos && <ErrorMessage message={errorCatalogos} />}
       {formAbierto && (
-        <article className="panel" style={{ marginBottom: 18 }}>
+        <article className="panel" style={{ marginBottom: 18 }} aria-busy={cargandoCatalogos}>
           <h2>Nuevo curso</h2>
           <p className="muted-copy">Elegí los registros relacionados; el sistema enviará sus IDs al backend.</p>
           {cargandoCatalogos && <p className="muted-copy">Cargando asignaturas, períodos, sedes y aulas...</p>}
@@ -279,8 +295,7 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
           <button className="primary-button" type="button" onClick={crear}><Check size={16} /> Guardar curso</button>
         </article>
       )}
-      {cargando && <p className="muted-copy">Cargando cursos...</p>}
-      {!cargando && rows.length === 0 ? (
+      {cargando && rows.length === 0 ? <SurfaceSkeleton label="cursos" /> : !cargando && rows.length === 0 ? (
         <EmptyState query={query} />
       ) : (
         <div className="table-wrap">
@@ -313,10 +328,16 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
 
 function DetalleCurso({
   curso,
+  aulas,
+  cargandoAulas,
+  errorAulas,
   onNotify,
   onRefresh,
 }: {
   curso: CursoDetalle
+  aulas: AulaCatalogo[]
+  cargandoAulas: boolean
+  errorAulas: string
   onNotify: (value: string) => void
   onRefresh: () => void
 }) {
@@ -331,6 +352,10 @@ function DetalleCurso({
   const [docente, setDocente] = useState(docenteVacio)
   const [inscripcion, setInscripcion] = useState(inscripcionVacia)
   const [resultado, setResultado] = useState(resultadoVacio)
+  const aulasDeSede = aulas.filter((aula) => aula.sedeId === curso.sedeId)
+  const aulaActualDisponible = aulasDeSede.some((aula) => aula.id === horario.aulaId)
+  const mostrarAulaActualSinVerificar = horario.aulaId > 0 && !aulaActualDisponible
+  const aulaActualAusente = !cargandoAulas && mostrarAulaActualSinVerificar
 
   const guardarEstado = async () => {
     if (!estado.trim()) {
@@ -348,6 +373,10 @@ function DetalleCurso({
     if (!Number.isInteger(horario.aulaId) || horario.aulaId <= 0 || !horario.diaSemana ||
         !horario.horaInicio || !horario.horaFin || horario.horaInicio >= horario.horaFin) {
       onNotify('Completá un día, aula y rango horario válidos.')
+      return
+    }
+    if (aulaActualAusente && horario.aulaId !== curso.aulaId) {
+      onNotify('Seleccioná un aula disponible para esta sede.')
       return
     }
     const action = await dispatch(actualizarHorarioCurso({ id: curso.id, datos: horario }))
@@ -419,20 +448,28 @@ function DetalleCurso({
   }
 
   return (
-    <div style={{ marginTop: 18 }}>
-      <article className="panel">
-        <div className="list-meta">
-          <div><h2>{curso.codigo}</h2><span>Curso #{curso.id} · Asignatura #{curso.asignaturaId} · Período #{curso.periodoId} · {curso.sedeNombre ?? `Sede #${curso.sedeId}`}</span></div>
-          <span>{curso.modalidad} · Cupo {curso.cupoMaximo}</span>
+    <div className="course-detail">
+      <article className="panel course-detail__summary">
+        <div className="course-detail__summary-heading">
+          <div>
+            <h2>{curso.codigo}</h2>
+            <p>Curso #{curso.id} · Asignatura #{curso.asignaturaId} · Período #{curso.periodoId} · {curso.sedeNombre ?? `Sede #${curso.sedeId}`}</p>
+          </div>
+          <div className="course-detail__summary-meta">
+            <span>{curso.modalidad}</span>
+            <span>Cupo máximo: {curso.cupoMaximo}</span>
+          </div>
         </div>
-        <p className="muted-copy">{curso.fechaInicio} – {curso.fechaFin}</p>
-        <p className="muted-copy">{curso.diaSemana ?? 'Sin día'} · {curso.turno ?? 'Sin turno'}{curso.horaInicio && curso.horaFin ? ` · ${curso.horaInicio.slice(0, 5)}–${curso.horaFin.slice(0, 5)}` : ''} · Aula {curso.aulaNombre ?? (curso.aulaId ? `#${curso.aulaId}` : 'sin asignar')}</p>
-        <div className="form-grid">
+        <div className="course-detail__facts">
+          <p>{curso.fechaInicio} – {curso.fechaFin}</p>
+          <p>{curso.diaSemana ?? 'Sin día'} · {curso.turno ?? 'Sin turno'}{curso.horaInicio && curso.horaFin ? ` · ${curso.horaInicio.slice(0, 5)}–${curso.horaFin.slice(0, 5)}` : ''} · Aula {curso.aulaNombre ?? (curso.aulaId ? `#${curso.aulaId}` : 'sin asignar')}</p>
+        </div>
+        <div className="form-grid course-detail__section-form">
           <label>Estado<input value={estado} onChange={(event) => setEstado(event.target.value)} /></label>
         </div>
         <button className="secondary-button" type="button" onClick={guardarEstado}>Actualizar estado</button>
       </article>
-      <article className="panel" style={{ marginTop: 18 }}>
+      <article className="panel course-detail__section">
         <h2>Horario y aula</h2>
         <div className="form-grid">
           <label>Día de la semana
@@ -443,13 +480,33 @@ function DetalleCurso({
               ))}
             </select>
           </label>
-          <label>ID de aula<input type="number" min="1" value={horario.aulaId || ''} onChange={(event) => setHorario({ ...horario, aulaId: Number(event.target.value) })} /></label>
+          <label>Aula
+            <select
+              value={horario.aulaId || ''}
+              onChange={(event) => setHorario({ ...horario, aulaId: Number(event.target.value) })}
+              disabled={cargandoAulas || aulasDeSede.length === 0}
+            >
+              <option value="">
+                {cargandoAulas ? 'Cargando aulas disponibles…' : aulasDeSede.length ? 'Seleccioná un aula…' : 'No hay aulas disponibles para esta sede'}
+              </option>
+              {mostrarAulaActualSinVerificar && (
+                <option value={horario.aulaId} disabled>
+                  Aula actual: {curso.aulaNombre ?? `#${horario.aulaId}`} ({cargandoAulas ? 'comprobando disponibilidad…' : 'no disponible'})
+                </option>
+              )}
+              {aulasDeSede.map((aula) => (
+                <option key={aula.id} value={aula.id}>{aula.codigo}: {aula.nombre}</option>
+              ))}
+            </select>
+            {aulaActualAusente && <small className="course-detail__field-note course-detail__field-note--warning">El aula actual no figura entre las disponibles; elegí otra para cambiarla.</small>}
+          </label>
           <label>Hora de inicio<input type="time" value={horario.horaInicio} onChange={(event) => setHorario({ ...horario, horaInicio: event.target.value })} /></label>
           <label>Hora de fin<input type="time" value={horario.horaFin} onChange={(event) => setHorario({ ...horario, horaFin: event.target.value })} /></label>
         </div>
+        {errorAulas && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {errorAulas}</div>}
         <button className="secondary-button" type="button" onClick={guardarHorario}>Guardar horario</button>
       </article>
-      <article className="panel" style={{ marginTop: 18 }}>
+      <article className="panel course-detail__section">
         <h2>Docentes</h2>
         <div className="table-wrap">
           <table>
@@ -465,7 +522,7 @@ function DetalleCurso({
         <button className="secondary-button" type="button" onClick={agregarDocente}><Plus size={16} /> Asignar docente</button>
       </article>
 
-      <article className="panel" style={{ marginTop: 18 }}>
+      <article className="panel course-detail__section">
         <h2>Inscripciones y resultados</h2>
         <div className="table-wrap">
           <table>

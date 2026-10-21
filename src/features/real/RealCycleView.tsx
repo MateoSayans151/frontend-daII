@@ -4,6 +4,7 @@ import './RealCycleView.css'
 import { useAppDispatch, useAppSelector } from '../../app/hooks'
 import { CalendarDatePicker } from '../../components/ui/CalendarDatePicker'
 import { EmptyState } from '../../components/ui/EmptyState'
+import { SurfaceSkeleton } from '../../components/ui/SurfaceSkeleton'
 import { crearPeriodo, listarPeriodos } from '../../services/periodos/periodosSlice'
 import { crearTurnoExamen, listarTurnosExamen } from '../../services/turnosExamen/turnosExamenSlice'
 import type { Screen } from '../../types/domain'
@@ -125,7 +126,7 @@ function PeriodosPanel({ query, onNotify }: { query: string; onNotify: (v: strin
         <button className="primary-button" onClick={crear}><Check size={16} /> Guardar</button>
       </article>
     )}
-    {rows.length === 0 && !cargando ? <EmptyState query={query} /> : (
+    {cargando && rows.length === 0 ? <SurfaceSkeleton label="períodos" variant="cards" rows={3} /> : rows.length === 0 ? <EmptyState query={query} /> : (
       <div className="cycle-cards">
         {rows.map((periodo) => (
           <article className="cycle-card" key={periodo.id}>
@@ -221,7 +222,7 @@ function TurnosPanel({ query, onNotify }: { query: string; onNotify: (v: string)
         <button className="primary-button" onClick={crear}><Check size={16} /> Guardar</button>
       </article>
     )}
-    {rows.length === 0 && !cargando ? <EmptyState query={query} /> : (
+    {cargando && rows.length === 0 ? <SurfaceSkeleton label="turnos de examen" variant="cards" rows={3} /> : rows.length === 0 ? <EmptyState query={query} /> : (
       <div className="cycle-cards">
         {rows.map((turno) => (
           <article className="cycle-card" key={turno.id}>

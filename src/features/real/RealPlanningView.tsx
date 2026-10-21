@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../../app/hooks'
 import { CalendarDatePicker } from '../../components/ui/CalendarDatePicker'
 import { EmptyState } from '../../components/ui/EmptyState'
+import { SurfaceSkeleton } from '../../components/ui/SurfaceSkeleton'
 import { crearSede, listarSedes } from '../../services/sedes/sedesSlice'
 import { crearAula, listarAulas } from '../../services/aulas/aulasSlice'
 import { crearAsignacion, obtenerAgenda } from '../../services/asignaciones/asignacionesSlice'
@@ -336,13 +337,15 @@ function SedesYAulasPanel({ query, onNotify }: { query: string; onNotify: (v: st
               <button className="primary-button" onClick={crearNuevaAula}><Check size={16} /> Guardar</button>
             </article>
           )}
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Código</th><th>Nombre</th><th>Capacidad</th><th>ID (para asignar)</th></tr></thead>
-              <tbody>{aulas.items.map((aula) => <tr key={aula.id}><td><strong>{aula.codigo}</strong></td><td>{aula.nombre}</td><td>{aula.capacidadMaxima} personas</td><td><span className="code">#{aula.id}</span></td></tr>)}</tbody>
-            </table>
-            {!aulas.cargando && aulas.items.length === 0 && <EmptyState query="" />}
-          </div>
+          {aulas.cargando && aulas.items.length === 0 ? <SurfaceSkeleton label="aulas" /> : (
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>Código</th><th>Nombre</th><th>Capacidad</th><th>ID (para asignar)</th></tr></thead>
+                <tbody>{aulas.items.map((aula) => <tr key={aula.id}><td><strong>{aula.codigo}</strong></td><td>{aula.nombre}</td><td>{aula.capacidadMaxima} personas</td><td><span className="code">#{aula.id}</span></td></tr>)}</tbody>
+              </table>
+              {!aulas.cargando && aulas.items.length === 0 && <EmptyState query="" />}
+            </div>
+          )}
         </>}
   </>
 }
@@ -496,15 +499,13 @@ function AgendaPanel({ onNotify }: { onNotify: (v: string) => void }) {
     {errorAulas && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {errorAulas}</div>}
     <button className="secondary-button" onClick={consultar}>Consultar agenda</button>
     {error && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {error}</div>}
-    {cargando && <p className="muted-copy">Consultando...</p>}
-    {!cargando && agenda.length > 0 && (
+    {cargando ? <SurfaceSkeleton label="agenda del aula" rows={3} /> : agenda.length > 0 ? (
       <div className="table-wrap" style={{ marginTop: 18 }}>
         <table>
           <thead><tr><th>Asignatura</th><th>Horario</th><th>Estudiantes</th></tr></thead>
           <tbody>{agenda.map((a) => <tr key={a.id}><td><span className="code">#{a.asignaturaId}</span></td><td>{a.horaInicio} – {a.horaFin}</td><td>{a.cantidadEstudiantes}</td></tr>)}</tbody>
         </table>
       </div>
-    )}
-    {!cargando && agenda.length === 0 && <p className="muted-copy" style={{ marginTop: 12 }}>Consultá una fecha para ver la ocupación del aula.</p>}
+    ) : <p className="muted-copy" style={{ marginTop: 12 }}>Consultá una fecha para ver la ocupación del aula.</p>}
   </article>
 }
