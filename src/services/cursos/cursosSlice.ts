@@ -4,10 +4,11 @@ import { cursosService } from './cursosService'
 import type {
   AsignarDocenteCurso,
   ActualizarHorarioCurso,
+  ActualizarInscripcionCurso,
+  CrearInscripcionCurso,
   CrearCurso,
   Curso,
   CursoDetalle,
-  GuardarInscripcionCurso,
 } from '../../types/api'
 
 interface EstadoCursos {
@@ -95,17 +96,25 @@ export const asignarDocenteCurso = createAsyncThunk<
   }
 })
 
-export const guardarInscripcionCurso = createAsyncThunk<
+export const inscribirAlumnoCurso = createAsyncThunk<
   void,
-  { id: number; datos: GuardarInscripcionCurso; actualizar: boolean },
+  { id: number; datos: CrearInscripcionCurso },
   { rejectValue: string }
->('cursos/guardarInscripcion', async ({ id, datos, actualizar }, { rejectWithValue }) => {
+>('cursos/inscribirAlumno', async ({ id, datos }, { rejectWithValue }) => {
   try {
-    if (actualizar) {
-      if (!datos.alumnoId) return rejectWithValue('Falta el ID del alumno para actualizar la inscripción')
-      await cursosService.actualizarInscripcion(id, datos.alumnoId, datos)
-    }
-    else await cursosService.guardarInscripcion(id, datos)
+    await cursosService.guardarInscripcion(id, datos)
+  } catch (error) {
+    return rejectWithValue(extraerMensajeError(error))
+  }
+})
+
+export const actualizarInscripcionCurso = createAsyncThunk<
+  void,
+  { id: number; alumnoId: string; datos: ActualizarInscripcionCurso },
+  { rejectValue: string }
+>('cursos/actualizarInscripcion', async ({ id, alumnoId, datos }, { rejectWithValue }) => {
+  try {
+    await cursosService.actualizarInscripcion(id, alumnoId, datos)
   } catch (error) {
     return rejectWithValue(extraerMensajeError(error))
   }
@@ -158,7 +167,8 @@ const cursosSlice = createSlice({
             actualizarEstadoCurso.pending.type,
             actualizarHorarioCurso.pending.type,
             asignarDocenteCurso.pending.type,
-            guardarInscripcionCurso.pending.type,
+            inscribirAlumnoCurso.pending.type,
+            actualizarInscripcionCurso.pending.type,
           ].includes(action.type),
         (state) => {
           state.error = null
@@ -170,7 +180,8 @@ const cursosSlice = createSlice({
             actualizarEstadoCurso.rejected.type,
             actualizarHorarioCurso.rejected.type,
             asignarDocenteCurso.rejected.type,
-            guardarInscripcionCurso.rejected.type,
+            inscribirAlumnoCurso.rejected.type,
+            actualizarInscripcionCurso.rejected.type,
           ].includes(action.type),
         (state, action: { payload?: string }) => {
           state.error = action.payload ?? 'No se pudo actualizar el curso'

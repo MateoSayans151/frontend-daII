@@ -132,7 +132,6 @@ export interface CrearCurso {
   periodoId: number
   sedeId: number
   modalidad: string
-  estado: string
   cupoMaximo: number
   fechaInicio: string
   fechaFin: string
@@ -169,9 +168,10 @@ export interface InscripcionCurso {
   notaFinal: number | null
   fechaResultado: string | null
 }
-export interface GuardarInscripcionCurso {
+export interface CrearInscripcionCurso {
   alumnoId: string
-  fechaInscripcion: string
+}
+export interface ActualizarInscripcionCurso {
   estado: string
   notaFinal?: number | null
   fechaResultado?: string | null
@@ -188,12 +188,16 @@ export interface PeriodoAcademico {
   numero: number
   fechaInicio: string
   fechaFin: string
+  inscripcionDesde: string
+  inscripcionHasta: string
 }
 export interface CrearPeriodoAcademico {
   anio: number
   numero: number
   fechaInicio: string
   fechaFin: string
+  inscripcionDesde: string
+  inscripcionHasta: string
 }
 
 export interface TurnoExamen {

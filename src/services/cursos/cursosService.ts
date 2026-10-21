@@ -2,10 +2,11 @@ import { authAxios } from "../api/authAxios";
 import type {
   AsignarDocenteCurso,
   ActualizarHorarioCurso,
+  ActualizarInscripcionCurso,
+  CrearInscripcionCurso,
   CrearCurso,
   Curso,
   CursoDetalle,
-  GuardarInscripcionCurso,
 } from "../../types/api";
 
 const BASE = "/api/planificacion/cursos";
@@ -35,12 +36,12 @@ export const cursosService = {
     authAxios.put(`${BASE}/${id}/horario`, datos).then(() => undefined),
   asignarDocente: (id: number, datos: AsignarDocenteCurso) =>
     authAxios.post(`${BASE}/${id}/docentes`, datos).then(() => undefined),
-  guardarInscripcion: (id: number, datos: GuardarInscripcionCurso) =>
+  guardarInscripcion: (id: number, datos: CrearInscripcionCurso) =>
     authAxios.post(`${BASE}/${id}/inscripciones`, datos).then(() => undefined),
   actualizarInscripcion: (
     id: number,
     alumnoId: string,
-    datos: GuardarInscripcionCurso,
+    datos: ActualizarInscripcionCurso,
   ) =>
     authAxios
       .put(`${BASE}/${id}/inscripciones/${encodeURIComponent(alumnoId)}`, datos)

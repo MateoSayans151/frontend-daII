@@ -1,0 +1,41 @@
+.cycle-cards {
+  align-items: start;
+}
+
+.cycle-card {
+  align-self: start;
+}
+
+.cycle-card h2 {
+  margin: 0 0 18px;
+}
+
+.cycle-date-group + .cycle-date-group {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #edf1f6;
+}
+
+.cycle-date-group > span {
+  display: block;
+  margin-bottom: 5px;
+  color: #7586a0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.cycle-date-group > p {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: #405b84;
+  font-size: 12px;
+}
+
+.cycle-date-group > p svg {
+  flex: 0 0 auto;
+  color: #3772c5;
+}
