@@ -1,4 +1,4 @@
-import { Bell, ListChecks } from '@phosphor-icons/react'
+import { Bell, List } from '@phosphor-icons/react'
 import { useEffect, useRef, useState } from 'react'
 import type { Screen } from '../../types/domain'
 import './Topbar.css'
@@ -30,13 +30,14 @@ export function Topbar({ screen, openMenu }: TopbarProps) {
   }, [notificationsOpen])
 
   return <header className="topbar">
-    <button className="mobile-menu" onClick={openMenu} aria-label="Abrir menú"><ListChecks size={22} /></button>
+    <button className="mobile-menu" type="button" onClick={openMenu} aria-label="Abrir menú"><List size={22} aria-hidden="true" /></button>
     <div className="breadcrumb">Gestión académica <span>/</span> {screen}</div>
     <div className="top-actions">
       <div className="notification-anchor" ref={notificationRef}>
         <button
           className="icon-button notification-trigger"
-          aria-label="Notificaciones"
+          aria-label="Abrir notificaciones"
+          aria-haspopup="dialog"
           aria-expanded={notificationsOpen}
           aria-controls="notification-panel"
           onClick={() => setNotificationsOpen((open) => !open)}

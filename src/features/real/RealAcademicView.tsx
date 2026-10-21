@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../../app/hooks'
 import { CalendarDatePicker } from '../../components/ui/CalendarDatePicker'
 import { EmptyState } from '../../components/ui/EmptyState'
+import { SurfaceSkeleton } from '../../components/ui/SurfaceSkeleton'
 import { AcademicSelect, type AcademicSelectOption } from '../../components/ui/AcademicSelect'
 import { Toolbar } from '../../components/ui/Toolbar'
 import {
@@ -138,13 +139,16 @@ function CarrerasPanel({ query, setQuery, onNotify }: { query: string; setQuery:
     {error && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {error}</div>}
 
     {formAbierto !== null && (
-      <article className="panel" style={{ marginBottom: 18 }}>
+      <article className="panel create-form-panel">
         <div className="panel-header"><div><h2>{formAbierto === 'nueva' ? 'Nueva carrera' : 'Editar carrera'}</h2></div><button className="text-button" onClick={() => setFormAbierto(null)}><X size={16} /></button></div>
         <div className="form-grid">
           <label>Código<input required maxLength={8} value={valores.codigo} onChange={(e) => setValores({ ...valores, codigo: normalizarCodigoAcademico(e.target.value) })} placeholder="Ej. ARQ-001" pattern="[A-Z]{3}[0-9]?-[0-9]{3}" title={CODIGO_ACADEMICO_MENSAJE} /><small>Formato: ARQ-001 o ARQ1-001</small></label>
           <label>Nombre<input required maxLength={120} value={valores.nombre} onChange={(e) => setValores({ ...valores, nombre: e.target.value })} placeholder="Ej. Ingeniería en Informática" /></label>
           <label>Facultad<input required maxLength={120} value={valores.facultad} onChange={(e) => setValores({ ...valores, facultad: e.target.value })} placeholder="Ej. Facultad de Ingeniería" /></label>
-          <label>Duración<input required maxLength={20} value={valores.duracion} onChange={(e) => setValores({ ...valores, duracion: e.target.value })} placeholder="Ej. 5 años" /></label>
+          <label>Duración (años)
+            <input type="number" inputMode="numeric" min="1" max="15" step="1" required value={valores.duracion.match(/^\d+/)?.[0] ?? ''} onChange={(e) => setValores({ ...valores, duracion: e.target.value ? `${e.target.value} años` : '' })} />
+            <small>Ingresá la duración total en años.</small>
+          </label>
           <label>Título que otorga<input required maxLength={120} value={valores.titulo} onChange={(e) => setValores({ ...valores, titulo: e.target.value })} placeholder="Ej. Ingeniero/a en Informática" /></label>
         </div>
         <button className="primary-button" onClick={guardar}><Check size={16} /> Guardar</button>
@@ -152,26 +156,28 @@ function CarrerasPanel({ query, setQuery, onNotify }: { query: string; setQuery:
     )}
 
     <div className="list-meta"><span>{rows.length} resultados</span></div>
-    <div className="table-wrap">
-      <table>
-        <thead><tr><th>Código</th><th>Nombre</th><th>Facultad</th><th>Estado</th><th aria-label="Acciones" /></tr></thead>
-        <tbody>
-          {rows.map((carrera) => (
-            <tr key={carrera.id}>
-              <td><span className="code">{carrera.codigo}</span></td>
-              <td><strong>{carrera.nombre}</strong><small>{carrera.titulo} · {carrera.duracion}</small></td>
-              <td>{carrera.facultad}</td>
-              <td><span className={`status ${estadoClase[carrera.estado]}`}><i />{carrera.estado}</span></td>
-              <td>
-                <button className="row-action" onClick={() => abrirEdicion(carrera)} aria-label={`Editar ${carrera.nombre}`}><PencilSimple size={17} /></button>
-                {carrera.estado !== 'INACTIVA' && <button className="row-action danger" onClick={() => desactivar(carrera.id)} aria-label={`Desactivar ${carrera.nombre}`}><Trash size={17} /></button>}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {!cargando && rows.length === 0 && <EmptyState query={query} />}
-    </div>
+    {cargando && items.length === 0 ? <SurfaceSkeleton label="carreras" /> : (
+      <div className="table-wrap">
+        <table>
+          <thead><tr><th>Código</th><th>Nombre</th><th>Facultad</th><th>Estado</th><th aria-label="Acciones" /></tr></thead>
+          <tbody>
+            {rows.map((carrera) => (
+              <tr key={carrera.id}>
+                <td><span className="code">{carrera.codigo}</span></td>
+                <td><strong>{carrera.nombre}</strong><small>{carrera.titulo} · {carrera.duracion}</small></td>
+                <td>{carrera.facultad}</td>
+                <td><span className={`status ${estadoClase[carrera.estado]}`}><i />{carrera.estado}</span></td>
+                <td>
+                  <button className="row-action" onClick={() => abrirEdicion(carrera)} aria-label={`Editar ${carrera.nombre}`}><PencilSimple size={17} /></button>
+                  {carrera.estado !== 'INACTIVA' && <button className="row-action danger" onClick={() => desactivar(carrera.id)} aria-label={`Desactivar ${carrera.nombre}`}><Trash size={17} /></button>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!cargando && rows.length === 0 && <EmptyState query={query} />}
+      </div>
+    )}
   </>
 }
 
@@ -256,7 +262,7 @@ function PlanesPanel({ onNotify }: { onNotify: (value: string) => void }) {
           <div className="list-meta"><span>{planes.items.length} planes</span><button className="text-button" onClick={() => setFormAbierto((v) => !v)}>{formAbierto ? 'Cancelar' : '+ Crear plan'}</button></div>
 
           {formAbierto && (
-            <article className="panel" style={{ marginBottom: 18 }}>
+            <article className="panel create-form-panel">
               <div className="form-grid">
                 <label>Código<input value={valores.codigo} maxLength={8} onChange={(e) => setValores({ ...valores, codigo: normalizarCodigoAcademico(e.target.value) })} placeholder="Ej. ARQ-001" pattern="[A-Z]{3}[0-9]?-[0-9]{3}" title={CODIGO_ACADEMICO_MENSAJE} /><small>Formato: ARQ-001 o ARQ1-001</small></label>
                 <label>Año del plan<select value={valores.nombre.replace('Plan de estudio ', '')} onChange={(e) => setValores({ ...valores, nombre: `Plan de estudio ${e.target.value}` })}><option value="">Seleccioná el año</option>{opcionesAnioCalendario.map((anio) => <option key={anio} value={anio}>{anio}</option>)}</select></label>
@@ -267,23 +273,25 @@ function PlanesPanel({ onNotify }: { onNotify: (value: string) => void }) {
             </article>
           )}
 
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Código</th><th>Nombre</th><th>Vigente desde</th><th>Asignaturas</th><th>Estado</th></tr></thead>
-              <tbody>
-                {planes.items.map((plan) => (
-                  <tr key={plan.id}>
-                    <td><span className="code">{plan.codigo}</span></td>
-                    <td><strong>{plan.nombre}</strong></td>
-                    <td>{plan.vigenciaDesde}</td>
-                    <td>{plan.cantidadAsignaturas}</td>
-                    <td><span className={`status ${estadoClase[plan.estado]}`}><i />{plan.estado}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {!planes.cargando && planes.items.length === 0 && <EmptyState query="" />}
-          </div>
+          {planes.cargando && planes.items.length === 0 ? <SurfaceSkeleton label="planes de estudio" /> : (
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>Código</th><th>Nombre</th><th>Vigente desde</th><th>Asignaturas</th><th>Estado</th></tr></thead>
+                <tbody>
+                  {planes.items.map((plan) => (
+                    <tr key={plan.id}>
+                      <td><span className="code">{plan.codigo}</span></td>
+                      <td><strong>{plan.nombre}</strong></td>
+                      <td>{plan.vigenciaDesde}</td>
+                      <td>{plan.cantidadAsignaturas}</td>
+                      <td><span className={`status ${estadoClase[plan.estado]}`}><i />{plan.estado}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {!planes.cargando && planes.items.length === 0 && <EmptyState query="" />}
+            </div>
+          )}
         </>}
   </>
 }
@@ -388,7 +396,7 @@ function AsignaturasPanel({ onNotify }: { onNotify: (value: string) => void }) {
           <div className="list-meta"><span>{asignaturas.items.length} asignaturas</span><button className="text-button" onClick={() => setFormAbierto((v) => !v)}>{formAbierto ? 'Cancelar' : '+ Crear asignatura'}</button></div>
 
           {formAbierto && (
-            <article className="panel" style={{ marginBottom: 18 }}>
+            <article className="panel create-form-panel">
               <div className="form-grid">
                 <label>Código<input value={valores.codigo} onChange={(e) => setValores({ ...valores, codigo: normalizarCodigoAcademico(e.target.value) })} placeholder="Ej. ARQ1-001" pattern="[A-Z]{3}[0-9]?-[0-9]{3}" title={CODIGO_ACADEMICO_MENSAJE} /><small>Formato: ARQ-001 o ARQ1-001</small></label>
                 <label>Nombre<input value={valores.nombre} onChange={(e) => setValores({ ...valores, nombre: e.target.value })} placeholder="Ej. Desarrollo de Aplicaciones II" /></label>
@@ -415,24 +423,26 @@ function AsignaturasPanel({ onNotify }: { onNotify: (value: string) => void }) {
             </article>
           )}
 
-          <div className="table-wrap">
-            <table>
-              <thead><tr><th>Código</th><th>Nombre</th><th>Año</th><th>Créditos</th><th>Carga horaria</th><th>Estado</th></tr></thead>
-              <tbody>
-                {asignaturas.items.map((asignatura) => (
-                  <tr key={asignatura.id}>
-                    <td><span className="code">{asignatura.codigo}</span></td>
-                    <td><strong>{asignatura.nombre}</strong></td>
-                    <td>{asignatura.anio}</td>
-                    <td>{asignatura.creditos}</td>
-                    <td>{asignatura.cargaHoraria} hs</td>
-                    <td><span className={`status ${estadoClase[asignatura.estado]}`}><i />{asignatura.estado}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {!asignaturas.cargando && asignaturas.items.length === 0 && <EmptyState query="" />}
-          </div>
+          {asignaturas.cargando && asignaturas.items.length === 0 ? <SurfaceSkeleton label="asignaturas" /> : (
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>Código</th><th>Nombre</th><th>Año</th><th>Créditos</th><th>Carga horaria</th><th>Estado</th></tr></thead>
+                <tbody>
+                  {asignaturas.items.map((asignatura) => (
+                    <tr key={asignatura.id}>
+                      <td><span className="code">{asignatura.codigo}</span></td>
+                      <td><strong>{asignatura.nombre}</strong></td>
+                      <td>{asignatura.anio}</td>
+                      <td>{asignatura.creditos}</td>
+                      <td>{asignatura.cargaHoraria} hs</td>
+                      <td><span className={`status ${estadoClase[asignatura.estado]}`}><i />{asignatura.estado}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {!asignaturas.cargando && asignaturas.items.length === 0 && <EmptyState query="" />}
+            </div>
+          )}
         </>}
   </>
 }
