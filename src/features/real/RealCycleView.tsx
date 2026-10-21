@@ -4,12 +4,18 @@ import './RealCycleView.css'
 import { useAppDispatch, useAppSelector } from '../../app/hooks'
 import { CalendarDatePicker } from '../../components/ui/CalendarDatePicker'
 import { EmptyState } from '../../components/ui/EmptyState'
+import { SurfaceSkeleton } from '../../components/ui/SurfaceSkeleton'
+import { Toolbar } from '../../components/ui/Toolbar'
 import { crearPeriodo, listarPeriodos } from '../../services/periodos/periodosSlice'
 import { crearTurnoExamen, listarTurnosExamen } from '../../services/turnosExamen/turnosExamenSlice'
 import type { Screen } from '../../types/domain'
 
-export function RealCycleView({ screen, query, onNotify }: { screen: Screen; query: string; setQuery: (v: string) => void; onNotify: (v: string) => void }) {
-  return screen === 'Períodos' ? <PeriodosPanel query={query} onNotify={onNotify} /> : <TurnosPanel query={query} onNotify={onNotify} />
+export function RealCycleView({ screen, query, setQuery, onNotify }: { screen: Screen; query: string; setQuery: (v: string) => void; onNotify: (v: string) => void }) {
+  const periodos = screen === 'Períodos'
+  return <>
+    <Toolbar query={query} setQuery={setQuery} placeholder={periodos ? 'Buscar período por año...' : 'Buscar turno por nombre...'} filters={false} />
+    {periodos ? <PeriodosPanel query={query} onNotify={onNotify} /> : <TurnosPanel query={query} onNotify={onNotify} />}
+  </>
 }
 
 const periodoVacio = {
@@ -103,7 +109,7 @@ function PeriodosPanel({ query, onNotify }: { query: string; onNotify: (v: strin
     <div className="list-meta"><span>{rows.length} períodos</span><button className="text-button" onClick={() => setFormAbierto((v) => !v)}>{formAbierto ? 'Cancelar' : '+ Crear período'}</button></div>
     {error && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {error}</div>}
     {formAbierto && (
-      <article className="panel" style={{ marginBottom: 18 }}>
+      <article className="panel create-form-panel">
         <div className="form-grid">
           <label>Año
             <select value={valores.anio} onChange={(e) => setValores({ ...valores, anio: e.target.value })}>
@@ -125,7 +131,7 @@ function PeriodosPanel({ query, onNotify }: { query: string; onNotify: (v: strin
         <button className="primary-button" onClick={crear}><Check size={16} /> Guardar</button>
       </article>
     )}
-    {rows.length === 0 && !cargando ? <EmptyState query={query} /> : (
+    {cargando && rows.length === 0 ? <SurfaceSkeleton label="períodos" variant="cards" rows={3} /> : rows.length === 0 ? <EmptyState query={query} /> : (
       <div className="cycle-cards">
         {rows.map((periodo) => (
           <article className="cycle-card" key={periodo.id}>
@@ -199,7 +205,7 @@ function TurnosPanel({ query, onNotify }: { query: string; onNotify: (v: string)
     <div className="list-meta"><span>{rows.length} turnos</span><button className="text-button" onClick={() => setFormAbierto((v) => !v)}>{formAbierto ? 'Cancelar' : '+ Crear turno'}</button></div>
     {error && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {error}</div>}
     {formAbierto && (
-      <article className="panel" style={{ marginBottom: 18 }}>
+      <article className="panel create-form-panel">
         <div className="form-grid">
           <label>Mes
             <select value={valores.mes} onChange={(e) => setValores({ ...valores, mes: e.target.value })}>
@@ -221,7 +227,7 @@ function TurnosPanel({ query, onNotify }: { query: string; onNotify: (v: string)
         <button className="primary-button" onClick={crear}><Check size={16} /> Guardar</button>
       </article>
     )}
-    {rows.length === 0 && !cargando ? <EmptyState query={query} /> : (
+    {cargando && rows.length === 0 ? <SurfaceSkeleton label="turnos de examen" variant="cards" rows={3} /> : rows.length === 0 ? <EmptyState query={query} /> : (
       <div className="cycle-cards">
         {rows.map((turno) => (
           <article className="cycle-card" key={turno.id}>

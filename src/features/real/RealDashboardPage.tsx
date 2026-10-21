@@ -8,7 +8,7 @@ import {
   Plus,
   WarningCircle,
 } from '@phosphor-icons/react'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useAppDispatch, useAppSelector } from '../../app/hooks'
 import { listarCarreras } from '../../services/carreras/carrerasSlice'
 import { listarSedes } from '../../services/sedes/sedesSlice'
@@ -87,10 +87,7 @@ export function RealDashboardPage({ onNavigate, onCreate }: RealDashboardPagePro
   const carreras = useAppSelector((state) => state.carreras)
   const sedes = useAppSelector((state) => state.sedes)
   const periodos = useAppSelector((state) => state.periodos)
-  const [solicitudesIniciadas, setSolicitudesIniciadas] = useState(false)
-
   useEffect(() => {
-    setSolicitudesIniciadas(true)
     dispatch(listarCarreras())
     dispatch(listarSedes())
     dispatch(listarPeriodos())
@@ -109,9 +106,9 @@ export function RealDashboardPage({ onNavigate, onCreate }: RealDashboardPagePro
     if (periodos.error) void dispatch(listarPeriodos())
   }
 
-  const cargandoCarreras = !solicitudesIniciadas || (carreras.cargando && carreras.items.length === 0)
-  const cargandoSedes = !solicitudesIniciadas || (sedes.cargando && sedes.items.length === 0)
-  const cargandoPeriodos = !solicitudesIniciadas || (periodos.cargando && periodos.items.length === 0)
+  const cargandoCarreras = carreras.cargando && carreras.items.length === 0
+  const cargandoSedes = sedes.cargando && sedes.items.length === 0
+  const cargandoPeriodos = periodos.cargando && periodos.items.length === 0
 
   return (
     <div className="real-dashboard">

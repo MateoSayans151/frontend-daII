@@ -31,6 +31,7 @@ export function Toolbar({
       <label className="search">
         <MagnifyingGlass size={18} />
         <input
+          type="search"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder={placeholder}

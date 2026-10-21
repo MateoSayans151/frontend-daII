@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useToast } from "./hooks/useToast";
 import { Modal, type ModalValues } from "./components/Modal";
 import { Toast } from "./components/Toast";
 import { PageHeading } from "./components/layout/PageHeading";
@@ -44,8 +45,8 @@ function AppMock() {
   const [screen, setScreen] = useState<Screen>("Resumen");
   const [query, setQuery] = useState("");
   const [modal, setModal] = useState<ModalTarget | null>(null);
-  const [toast, setToast] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { message: toast, notify } = useToast();
   const [careers, setCareers] = usePersistentState<Career[]>(
     "uadenet-mock-careers",
     academicCareers,
@@ -108,11 +109,6 @@ function AppMock() {
     setScreen(next);
     setQuery("");
     setSidebarOpen(false);
-  };
-
-  const notify = (message: string) => {
-    setToast(message);
-    window.setTimeout(() => setToast(""), 2600);
   };
 
   const openCreate = (kind: ModalKind) => setModal({ kind });
@@ -325,7 +321,7 @@ function AppMock() {
         name: values.name.trim(),
         title: values.title.trim(),
         faculty: values.faculty.trim(),
-        duration: values.duration.trim(),
+        duration: `${values.duration.trim()} años`,
         code: values.code.trim().toUpperCase(),
         status: careers.find((career) => career.id === id)?.status ?? "Activa",
       };
@@ -652,6 +648,7 @@ function AppMock() {
           initialValues={initialValues()}
           close={() => setModal(null)}
           onSave={saveModal}
+          catalogs={{ careers, plans, subjects, campuses: campusList, rooms }}
         />
       )}
     </>
