@@ -54,16 +54,55 @@ textarea {
 .primary-button:focus-visible,
 .secondary-button:focus-visible,
 .text-button:focus-visible,
+.row-action:focus-visible,
 .filter-button:focus-visible,
 .calendar-picker__trigger:focus-visible,
+.academic-select__trigger:focus-visible,
+.mobile-menu:focus-visible,
+.notification-trigger:focus-visible,
+.close-sidebar:focus-visible,
+.logout-button:focus-visible,
 .form-grid input:focus-visible,
 .form-grid select:focus-visible,
 .modal input:focus-visible,
+.modal select:focus-visible,
 .modal textarea:focus-visible,
 .nav-group button:focus-visible,
 .icon-button:focus-visible {
   outline: 3px solid #9fc1f1;
   outline-offset: 2px;
+}
+
+button:disabled,
+select:disabled,
+input:disabled {
+  cursor: not-allowed;
+}
+
+.skip-link {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 100;
+  transform: translateY(-160%);
+  padding: 10px 14px;
+  border: 1px solid #b7cbe5;
+  border-radius: 7px;
+  background: #fff;
+  color: #173d74;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 5px 18px #132b5220;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 3px solid #9fc1f1;
+  outline-offset: 2px;
+}
+
+#main-content:focus {
+  outline: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -165,6 +204,41 @@ textarea {
   to { background-position-x: -220%; }
 }
 
+.modal-backdrop {
+  animation: modal-backdrop-enter 180ms var(--uadenet-ease-out) both;
+}
+
+.modal {
+  animation: modal-surface-enter 180ms var(--uadenet-ease-out) both;
+  transform-origin: center;
+}
+
+@keyframes modal-backdrop-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-surface-enter {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.academic-select__popover,
+.calendar-picker__popover {
+  transform-origin: top left;
+  animation: select-popover-enter 150ms var(--uadenet-ease-out) both;
+}
+
+.academic-select__popover.is-above,
+.calendar-picker__popover.is-above {
+  transform-origin: bottom left;
+}
+
+@keyframes select-popover-enter {
+  from { opacity: 0; transform: translateY(-3px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 .course-detail {
   display: grid;
   gap: 20px;
@@ -263,7 +337,225 @@ textarea {
   margin: 0 0 14px;
 }
 
+.modal {
+  max-height: min(88vh, 860px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.course-filter-panel,
+.course-create-panel,
+.planning-form-panel {
+  margin-bottom: 18px;
+}
+
+.course-create-panel,
+.planning-form-panel,
+.create-form-panel {
+  animation: panel-enter 180ms var(--uadenet-ease-out) both;
+}
+
+@keyframes panel-enter {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.course-filter-grid {
+  grid-template-columns: minmax(230px, 1fr) auto;
+  align-items: end;
+  margin: 0;
+}
+
+.course-filter-grid > .secondary-button {
+  min-height: 42px;
+}
+
+.course-create-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.course-create-panel > h2 {
+  margin: 0;
+  color: #1a3158;
+  font-size: 18px;
+}
+
+.course-create-panel > .muted-copy {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.course-create-panel > .form-grid {
+  gap: 18px 20px;
+  margin: 0;
+}
+
+.course-create-panel > .primary-button {
+  justify-self: start;
+  margin-top: 5px;
+}
+
+.course-create-panel .academic-select {
+  min-width: 0;
+}
+
+.campus-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.campus-card {
+  display: flex;
+  min-width: 0;
+  min-height: 94px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 18px;
+  border: 1px solid #d8deea;
+  border-radius: 10px;
+  background: #fff;
+  color: #1b2b49;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms var(--uadenet-ease-out), background-color 150ms var(--uadenet-ease-out), box-shadow 150ms var(--uadenet-ease-out);
+}
+
+.campus-card strong {
+  font-size: 15px;
+}
+
+.campus-card span {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  color: #4d5d7a;
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.campus-card span svg {
+  flex: 0 0 auto;
+}
+
+.campus-card.is-selected {
+  border-color: #738fb8;
+  background: #f1f5fb;
+  box-shadow: 0 3px 12px rgb(28 63 114 / 10%);
+}
+
+.campus-card:focus-visible {
+  outline: 3px solid #9fc1f1;
+  outline-offset: 2px;
+}
+
+.selected-campus-address {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 12px 0 0;
+}
+
+.selected-campus-address svg {
+  flex: 0 0 auto;
+}
+
+.planning-section-divider {
+  margin-top: 28px;
+}
+
+.agenda-filter-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 610px;
+  margin-top: 0;
+}
+
+.agenda-results {
+  margin-top: 18px;
+}
+
+.agenda-guidance,
+.agenda-empty {
+  margin: 16px 0 0;
+  color: #667b95;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.agenda-empty {
+  padding: 16px;
+  border: 1px dashed #cbd7e6;
+  border-radius: 8px;
+  background: #f8fafd;
+}
+
+.course-detail__field-note {
+  display: block;
+  margin: 10px 0 13px;
+}
+
+button:disabled,
+.primary-button:disabled,
+.secondary-button:disabled {
+  opacity: 0.66;
+  box-shadow: none;
+  transform: none;
+}
+
 @media (max-width: 760px) {
+  .sidebar {
+    z-index: 31;
+  }
+
+  .sidebar:not(.open) {
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform 220ms var(--uadenet-ease-out), visibility 0s linear 220ms;
+  }
+
+  .sidebar.open {
+    visibility: visible;
+    pointer-events: auto;
+    transition: transform 220ms var(--uadenet-ease-out), visibility 0s;
+  }
+
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    border: 0;
+    background: rgb(17 38 77 / 34%);
+    animation: modal-backdrop-enter 180ms var(--uadenet-ease-out) both;
+  }
+
+  .mobile-menu,
+  .close-sidebar {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .course-filter-grid,
+  .agenda-filter-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .course-filter-grid > .secondary-button {
+    justify-self: start;
+  }
+
+  .course-create-panel > .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .campus-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .surface-skeleton--cards .surface-skeleton__items {
     grid-template-columns: 1fr;
   }
@@ -297,6 +589,10 @@ textarea {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto !important;
+  }
+
   .primary-button:not(:disabled):active,
   .secondary-button:not(:disabled):active {
     transform: none;
@@ -306,5 +602,21 @@ textarea {
   .surface-skeleton__bar {
     animation: none;
     background: #edf2f8;
+  }
+
+  .modal-backdrop,
+  .modal,
+  .academic-select__popover,
+  .calendar-picker__popover,
+  .sidebar-backdrop,
+  .course-create-panel,
+  .planning-form-panel,
+  .create-form-panel {
+    animation-duration: 80ms;
+  }
+
+  .sidebar:not(.open),
+  .sidebar.open {
+    transition-duration: 80ms, 0s;
   }
 }

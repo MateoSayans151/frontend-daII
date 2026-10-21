@@ -139,13 +139,16 @@ function CarrerasPanel({ query, setQuery, onNotify }: { query: string; setQuery:
     {error && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {error}</div>}
 
     {formAbierto !== null && (
-      <article className="panel" style={{ marginBottom: 18 }}>
+      <article className="panel create-form-panel">
         <div className="panel-header"><div><h2>{formAbierto === 'nueva' ? 'Nueva carrera' : 'Editar carrera'}</h2></div><button className="text-button" onClick={() => setFormAbierto(null)}><X size={16} /></button></div>
         <div className="form-grid">
           <label>Código<input required maxLength={8} value={valores.codigo} onChange={(e) => setValores({ ...valores, codigo: normalizarCodigoAcademico(e.target.value) })} placeholder="Ej. ARQ-001" pattern="[A-Z]{3}[0-9]?-[0-9]{3}" title={CODIGO_ACADEMICO_MENSAJE} /><small>Formato: ARQ-001 o ARQ1-001</small></label>
           <label>Nombre<input required maxLength={120} value={valores.nombre} onChange={(e) => setValores({ ...valores, nombre: e.target.value })} placeholder="Ej. Ingeniería en Informática" /></label>
           <label>Facultad<input required maxLength={120} value={valores.facultad} onChange={(e) => setValores({ ...valores, facultad: e.target.value })} placeholder="Ej. Facultad de Ingeniería" /></label>
-          <label>Duración<input required maxLength={20} value={valores.duracion} onChange={(e) => setValores({ ...valores, duracion: e.target.value })} placeholder="Ej. 5 años" /></label>
+          <label>Duración (años)
+            <input type="number" inputMode="numeric" min="1" max="15" step="1" required value={valores.duracion.match(/^\d+/)?.[0] ?? ''} onChange={(e) => setValores({ ...valores, duracion: e.target.value ? `${e.target.value} años` : '' })} />
+            <small>Ingresá la duración total en años.</small>
+          </label>
           <label>Título que otorga<input required maxLength={120} value={valores.titulo} onChange={(e) => setValores({ ...valores, titulo: e.target.value })} placeholder="Ej. Ingeniero/a en Informática" /></label>
         </div>
         <button className="primary-button" onClick={guardar}><Check size={16} /> Guardar</button>
@@ -259,7 +262,7 @@ function PlanesPanel({ onNotify }: { onNotify: (value: string) => void }) {
           <div className="list-meta"><span>{planes.items.length} planes</span><button className="text-button" onClick={() => setFormAbierto((v) => !v)}>{formAbierto ? 'Cancelar' : '+ Crear plan'}</button></div>
 
           {formAbierto && (
-            <article className="panel" style={{ marginBottom: 18 }}>
+            <article className="panel create-form-panel">
               <div className="form-grid">
                 <label>Código<input value={valores.codigo} maxLength={8} onChange={(e) => setValores({ ...valores, codigo: normalizarCodigoAcademico(e.target.value) })} placeholder="Ej. ARQ-001" pattern="[A-Z]{3}[0-9]?-[0-9]{3}" title={CODIGO_ACADEMICO_MENSAJE} /><small>Formato: ARQ-001 o ARQ1-001</small></label>
                 <label>Año del plan<select value={valores.nombre.replace('Plan de estudio ', '')} onChange={(e) => setValores({ ...valores, nombre: `Plan de estudio ${e.target.value}` })}><option value="">Seleccioná el año</option>{opcionesAnioCalendario.map((anio) => <option key={anio} value={anio}>{anio}</option>)}</select></label>
@@ -393,7 +396,7 @@ function AsignaturasPanel({ onNotify }: { onNotify: (value: string) => void }) {
           <div className="list-meta"><span>{asignaturas.items.length} asignaturas</span><button className="text-button" onClick={() => setFormAbierto((v) => !v)}>{formAbierto ? 'Cancelar' : '+ Crear asignatura'}</button></div>
 
           {formAbierto && (
-            <article className="panel" style={{ marginBottom: 18 }}>
+            <article className="panel create-form-panel">
               <div className="form-grid">
                 <label>Código<input value={valores.codigo} onChange={(e) => setValores({ ...valores, codigo: normalizarCodigoAcademico(e.target.value) })} placeholder="Ej. ARQ1-001" pattern="[A-Z]{3}[0-9]?-[0-9]{3}" title={CODIGO_ACADEMICO_MENSAJE} /><small>Formato: ARQ-001 o ARQ1-001</small></label>
                 <label>Nombre<input value={valores.nombre} onChange={(e) => setValores({ ...valores, nombre: e.target.value })} placeholder="Ej. Desarrollo de Aplicaciones II" /></label>

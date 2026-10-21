@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useToast } from "./hooks/useToast";
 import { Toast } from "./components/Toast";
 import { PageHeading } from "./components/layout/PageHeading";
 import { DashboardLayout } from "./layouts/DashboardLayout";
@@ -29,18 +30,13 @@ function AppReal() {
   const usuario = useAppSelector((state) => state.usuarios.actual);
   const [screen, setScreen] = useState<Screen>("Resumen");
   const [query, setQuery] = useState("");
-  const [toast, setToast] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { message: toast, notify } = useToast();
 
   const navigate = (next: Screen) => {
     setScreen(next);
     setQuery("");
     setSidebarOpen(false);
-  };
-
-  const notify = (message: string) => {
-    setToast(message);
-    window.setTimeout(() => setToast(""), 2600);
   };
 
   return (
