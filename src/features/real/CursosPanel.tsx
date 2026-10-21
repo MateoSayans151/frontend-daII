@@ -7,15 +7,16 @@ import { extraerMensajeError } from '../../services/api/erroresApi'
 import { catalogosService, type AulaCatalogo } from '../../services/catalogos/catalogosService'
 import {
   asignarDocenteCurso,
+  actualizarInscripcionCurso,
   actualizarEstadoCurso,
   actualizarHorarioCurso,
   crearCurso,
-  guardarInscripcionCurso,
+  inscribirAlumnoCurso,
   limpiarCursoSeleccionado,
   listarCursos,
   obtenerCurso,
 } from '../../services/cursos/cursosSlice'
-import type { Asignatura, CursoDetalle, CrearCurso, GuardarInscripcionCurso, PeriodoAcademico, Sede } from '../../types/api'
+import type { ActualizarInscripcionCurso, Asignatura, CursoDetalle, CrearCurso, PeriodoAcademico, Sede } from '../../types/api'
 import {
   CODIGO_ACADEMICO_MENSAJE,
   esCodigoAcademicoValido,
@@ -28,7 +29,6 @@ const cursoVacio: CrearCurso = {
   periodoId: 0,
   sedeId: 0,
   modalidad: '',
-  estado: '',
   cupoMaximo: 0,
   fechaInicio: '',
   fechaFin: '',
@@ -40,7 +40,13 @@ const cursoVacio: CrearCurso = {
 }
 
 const docenteVacio = { docenteId: '', rol: '' }
-const inscripcionVacia = { alumnoId: '', fechaInscripcion: '', estado: '' }
+const inscripcionVacia = { alumnoId: '' }
+const resultadoVacio: ActualizarInscripcionCurso & { alumnoId: string } = {
+  alumnoId: '',
+  estado: '',
+  notaFinal: null,
+  fechaResultado: '',
+}
 
 export function CursosPanel({ query, onNotify }: { query: string; onNotify: (value: string) => void }) {
   const dispatch = useAppDispatch()
@@ -112,7 +118,6 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
       !Number.isInteger(valores.sedeId) ||
       valores.sedeId <= 0 ||
       !valores.modalidad.trim() ||
-      !valores.estado.trim() ||
       !Number.isInteger(valores.cupoMaximo) ||
       valores.cupoMaximo <= 0 ||
       !valores.fechaInicio ||
@@ -235,10 +240,6 @@ export function CursosPanel({ query, onNotify }: { query: string; onNotify: (val
               <input value={valores.modalidad} onChange={(event) => setValores({ ...valores, modalidad: event.target.value })} placeholder="Ej. PRESENCIAL" />
             </label>
             <label>
-              Estado
-              <input value={valores.estado} onChange={(event) => setValores({ ...valores, estado: event.target.value })} placeholder="Estado inicial" />
-            </label>
-            <label>
               Cupo máximo
               <input type="number" min="1" step="1" value={valores.cupoMaximo || ''} onChange={(event) => setValores({ ...valores, cupoMaximo: Number(event.target.value) })} />
             </label>
@@ -329,13 +330,7 @@ function DetalleCurso({
   })
   const [docente, setDocente] = useState(docenteVacio)
   const [inscripcion, setInscripcion] = useState(inscripcionVacia)
-  const [resultado, setResultado] = useState<GuardarInscripcionCurso>({
-    alumnoId: '',
-    fechaInscripcion: '',
-    estado: '',
-    notaFinal: null,
-    fechaResultado: '',
-  })
+  const [resultado, setResultado] = useState(resultadoVacio)
 
   const guardarEstado = async () => {
     if (!estado.trim()) {
@@ -376,16 +371,15 @@ function DetalleCurso({
   }
 
   const inscribir = async () => {
-    if (!inscripcion.alumnoId.trim() || !inscripcion.fechaInscripcion || !inscripcion.estado.trim()) {
-      onNotify('Completá el alumno, la fecha de inscripción y el estado.')
+    if (!inscripcion.alumnoId.trim()) {
+      onNotify('Completá el ID del alumno.')
       return
     }
-    const action = await dispatch(guardarInscripcionCurso({
+    const action = await dispatch(inscribirAlumnoCurso({
       id: curso.id,
-      datos: inscripcion,
-      actualizar: false,
+      datos: { alumnoId: inscripcion.alumnoId.trim() },
     }))
-    if (guardarInscripcionCurso.fulfilled.match(action)) {
+    if (inscribirAlumnoCurso.fulfilled.match(action)) {
       setInscripcion(inscripcionVacia)
       onNotify('Inscripción registrada correctamente')
       onRefresh()
@@ -393,16 +387,21 @@ function DetalleCurso({
   }
 
   const guardarResultado = async () => {
-    if (!resultado.alumnoId.trim() || !resultado.fechaInscripcion || !resultado.estado.trim()) {
-      onNotify('Completá los datos obligatorios de la inscripción.')
+    if (!resultado.alumnoId.trim() || !resultado.estado.trim()) {
+      onNotify('Completá el alumno y el estado del resultado.')
       return
     }
-    const action = await dispatch(guardarInscripcionCurso({
+    const action = await dispatch(actualizarInscripcionCurso({
       id: curso.id,
-      datos: resultado,
-      actualizar: true,
+      alumnoId: resultado.alumnoId.trim(),
+      datos: {
+        estado: resultado.estado,
+        notaFinal: resultado.notaFinal,
+        fechaResultado: resultado.fechaResultado || null,
+      },
     }))
-    if (guardarInscripcionCurso.fulfilled.match(action)) {
+    if (actualizarInscripcionCurso.fulfilled.match(action)) {
+      setResultado(resultadoVacio)
       onNotify('Resultado actualizado correctamente')
       onRefresh()
     }
@@ -413,7 +412,6 @@ function DetalleCurso({
     if (!alumno) return
     setResultado({
       alumnoId: alumno.alumnoId,
-      fechaInscripcion: alumno.fechaInscripcion,
       estado: alumno.estado,
       notaFinal: alumno.notaFinal,
       fechaResultado: alumno.fechaResultado ?? '',
@@ -485,14 +483,11 @@ function DetalleCurso({
         <h3>Inscribir alumno</h3>
         <div className="form-grid">
           <label>ID externo del alumno<input value={inscripcion.alumnoId} onChange={(event) => setInscripcion({ ...inscripcion, alumnoId: event.target.value })} /></label>
-          <CalendarDatePicker label="Fecha de inscripción" value={inscripcion.fechaInscripcion} onChange={(fechaInscripcion) => setInscripcion({ ...inscripcion, fechaInscripcion })} />
-          <label>Estado<input value={inscripcion.estado} onChange={(event) => setInscripcion({ ...inscripcion, estado: event.target.value })} placeholder="Ej. INSCRIPTA" /></label>
         </div>
         <button className="secondary-button" type="button" onClick={inscribir}><Plus size={16} /> Inscribir</button>
         <h3>Actualizar resultado</h3>
         <div className="form-grid">
           <label>ID externo del alumno<input value={resultado.alumnoId} onChange={(event) => setResultado({ ...resultado, alumnoId: event.target.value })} /></label>
-          <CalendarDatePicker label="Fecha de inscripción" value={resultado.fechaInscripcion} onChange={(fechaInscripcion) => setResultado({ ...resultado, fechaInscripcion })} />
           <label>Estado<input value={resultado.estado} onChange={(event) => setResultado({ ...resultado, estado: event.target.value })} placeholder="Ej. APROBADA" /></label>
           <label>Nota final<input type="number" step="0.01" value={resultado.notaFinal ?? ''} onChange={(event) => setResultado({ ...resultado, notaFinal: event.target.value === '' ? null : Number(event.target.value) })} /></label>
           <CalendarDatePicker label="Fecha de resultado" value={resultado.fechaResultado ?? ''} onChange={(fechaResultado) => setResultado({ ...resultado, fechaResultado })} />

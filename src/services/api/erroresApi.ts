@@ -22,7 +22,13 @@ export function extraerMensajeError(
       ? ` (HTTP ${estado}${metodo && ruta ? ` · ${metodo} ${ruta}` : ''})`
       : metodo && ruta ? ` (${metodo} ${ruta})` : ''
 
-    if (error.response?.data?.mensaje) return `${error.response.data.mensaje}${contexto}`
+    if (error.response?.data?.mensaje) {
+      const { mensaje, errores } = error.response.data
+      const detalles = errores
+        ? Object.entries(errores).map(([campo, detalle]) => `${campo}: ${detalle}`).join('; ')
+        : ''
+      return `${detalles ? `${mensaje}. ${detalles}` : mensaje}${contexto}`
+    }
     if (estado === 401) return `Debes iniciar sesion para continuar${contexto}`
     if (estado === 403) return `No tenes permisos para realizar esta accion${contexto}`
     if (!error.response) return `No se pudo conectar con el servidor${contexto}`

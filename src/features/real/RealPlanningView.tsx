@@ -454,10 +454,30 @@ function AgendaPanel({ onNotify }: { onNotify: (v: string) => void }) {
   const { agenda, cargando, error } = useAppSelector((state) => state.asignaciones)
   const [aulaId, setAulaId] = useState('')
   const [fecha, setFecha] = useState('')
+  const [aulas, setAulas] = useState<AulaCatalogo[]>([])
+  const [cargandoAulas, setCargandoAulas] = useState(true)
+  const [errorAulas, setErrorAulas] = useState('')
+
+  useEffect(() => {
+    let activo = true
+    catalogosService.paraPlanificacion()
+      .then((datos) => {
+        if (!activo) return
+        setAulas(datos.aulas)
+        setErrorAulas(datos.advertencias.join(' '))
+      })
+      .catch((catalogosError) => {
+        if (activo) setErrorAulas(extraerMensajeError(catalogosError, 'No se pudieron cargar las aulas'))
+      })
+      .finally(() => {
+        if (activo) setCargandoAulas(false)
+      })
+    return () => { activo = false }
+  }, [])
 
   const consultar = async () => {
     if (!aulaId || !fecha) {
-      onNotify('Completá el ID de aula y la fecha.')
+      onNotify('Completá el aula y la fecha.')
       return
     }
     await dispatch(obtenerAgenda({ aulaId: Number(aulaId), fecha }))
@@ -465,14 +485,15 @@ function AgendaPanel({ onNotify }: { onNotify: (v: string) => void }) {
 
   return <article className="panel">
     <div className="form-grid" style={{ maxWidth: 420 }}>
-      <label>ID de aula
+      <label>Aula
         <select value={aulaId} onChange={(e) => setAulaId(e.target.value)}>
-          <option value="">Seleccioná un aula...</option>
-          {opcionesAsignacion.map((id) => <option key={id} value={id}>{id}</option>)}
+          <option value="">{cargandoAulas ? 'Cargando aulas...' : aulas.length ? 'Seleccioná un aula...' : 'No hay aulas disponibles'}</option>
+          {aulas.map((aula) => <option key={aula.id} value={aula.id}>{aula.codigo}: {aula.nombre} ({aula.sedeNombre})</option>)}
         </select>
       </label>
       <CalendarDatePicker label="Fecha" value={fecha} onChange={setFecha} />
     </div>
+    {errorAulas && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {errorAulas}</div>}
     <button className="secondary-button" onClick={consultar}>Consultar agenda</button>
     {error && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {error}</div>}
     {cargando && <p className="muted-copy">Consultando...</p>}
