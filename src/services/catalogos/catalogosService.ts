@@ -52,6 +52,25 @@ export interface CatalogosPlanificacion {
 }
 
 export const catalogosService = {
+  async paraAsignaciones(): Promise<Pick<CatalogosPlanificacion, 'asignaturas' | 'aulas' | 'advertencias'>> {
+    const [resultadoAsignaturas, resultadoSedes] = await Promise.allSettled([
+      listarTodasLasAsignaturas(), sedesService.listar(),
+    ])
+    const advertencias: string[] = []
+    if (resultadoAsignaturas.status === 'rejected') {
+      advertencias.push(`No se pudieron cargar asignaturas: ${extraerMensajeError(resultadoAsignaturas.reason)}`)
+    }
+    if (resultadoSedes.status === 'rejected') {
+      advertencias.push(`No se pudieron cargar sedes: ${extraerMensajeError(resultadoSedes.reason)}`)
+    }
+    const sedes = resultadoSedes.status === 'fulfilled' ? resultadoSedes.value : []
+    const resultadoAulas = await listarTodasLasAulas(sedes)
+    return {
+      asignaturas: resultadoAsignaturas.status === 'fulfilled' ? resultadoAsignaturas.value : [],
+      aulas: resultadoAulas.aulas,
+      advertencias: [...advertencias, ...resultadoAulas.advertencias],
+    }
+  },
   async paraPlanificacion(): Promise<CatalogosPlanificacion> {
     const resultados = await Promise.allSettled([
       listarTodasLasAsignaturas(),

@@ -7,3 +7,78 @@
   font-size: 12px;
   line-height: 20px;
 }
+
+.assignment-list-table td small {
+  display: block;
+  margin-top: 4px;
+  color: #8391a5;
+  font-size: 10px;
+}
+
+.subject-agenda-toolbar,
+.subject-agenda-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.subject-agenda-toolbar {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin: 6px 0 17px;
+}
+
+.subject-agenda-nav { flex-wrap: wrap; }
+.subject-agenda-nav strong { color: #29456f; font-size: 13px; }
+.subject-agenda-total { color: #57749b; font-size: 11px; font-weight: 700; }
+.subject-agenda-nav .calendar-nav:focus-visible { outline: 3px solid #9fc1f1; outline-offset: 2px; }
+
+.subject-agenda-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(145px, 1fr));
+  overflow-x: auto;
+  border: 1px solid #dce5f0;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.subject-agenda-day {
+  min-height: 210px;
+  padding: 13px 10px;
+  border-right: 1px solid #e7edf4;
+}
+
+.subject-agenda-day:last-child { border-right: 0; }
+.subject-agenda-day-head { display: grid; gap: 4px; }
+.subject-agenda-day-head strong { color: #29456f; font-size: 12px; text-transform: capitalize; }
+.subject-agenda-day-head span,
+.subject-agenda-count { color: #8192aa; font-size: 10px; }
+.subject-agenda-count { display: block; margin-top: 10px; }
+.subject-agenda-free { margin: 20px 0 0; color: #9aa8bb; font-size: 11px; }
+
+.subject-agenda-event {
+  display: grid;
+  gap: 5px;
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px solid #c7dcfb;
+  border-radius: 7px;
+  background: #eaf3ff;
+  color: #285590;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.subject-agenda-event strong { font-size: 12px; }
+.subject-agenda-event span { font-size: 11px; font-weight: 700; }
+.subject-agenda-event small { color: #5f7898; font-size: 10px; line-height: 1.4; }
+.subject-agenda-event:hover { transform: translateY(-2px); box-shadow: 0 6px 15px #2c5b9220; }
+
+@media (max-width: 760px) {
+  .subject-agenda-grid { grid-template-columns: repeat(7, minmax(150px, 1fr)); }
+  .subject-agenda-panel { padding: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .subject-agenda-event { transition: none; }
+  .subject-agenda-event:hover { transform: none; }
+}
