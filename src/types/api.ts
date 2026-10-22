@@ -16,7 +16,6 @@ export interface CrearCarrera {
   codigo: string
   nombre: string
   facultad: string
-  duracion: string
   titulo: string
 }
 
@@ -217,6 +216,8 @@ export interface CrearTurnoExamen {
 }
 
 export interface ValidarRegularidad {
+  alumnoId: string
+  cursoId: number
   asistencia: number
   promedio: number
   asistenciaMinima: number
@@ -226,6 +227,12 @@ export interface ResultadoRegularidad {
   regular: boolean
   habilitadoParaFinal: boolean
   motivos: string[]
+  alumnoId: string
+  cursoId: number
+  cursoCodigo: string
+  asignaturaId: number
+  asignaturaCodigo: string
+  asignaturaNombre: string
 }
 
 export type Permiso = string

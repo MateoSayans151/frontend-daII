@@ -52,6 +52,7 @@ export interface CatalogosPlanificacion {
 }
 
 export const catalogosService = {
+  listarAsignaturas: listarTodasLasAsignaturas,
   async paraAsignaciones(): Promise<Pick<CatalogosPlanificacion, 'asignaturas' | 'aulas' | 'advertencias'>> {
     const [resultadoAsignaturas, resultadoSedes] = await Promise.allSettled([
       listarTodasLasAsignaturas(), sedesService.listar(),

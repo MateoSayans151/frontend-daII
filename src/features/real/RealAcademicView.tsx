@@ -74,7 +74,7 @@ export function RealAcademicView({ screen, query, setQuery, onNotify }: Props) {
   return <CorrelatividadesPanel onNotify={onNotify} />
 }
 
-const carreraVacia: CrearCarrera = { codigo: '', nombre: '', facultad: '', duracion: '', titulo: '' }
+const carreraVacia: CrearCarrera = { codigo: '', nombre: '', facultad: '', titulo: '' }
 const opcionesAnioCalendario = Array.from({ length: new Date().getFullYear() - 1999 + 5 }, (_, index) => 2000 + index)
 
 function CarrerasPanel({ query, setQuery, onNotify }: { query: string; setQuery: (value: string) => void; onNotify: (value: string) => void }) {
@@ -95,22 +95,18 @@ function CarrerasPanel({ query, setQuery, onNotify }: { query: string; setQuery:
   }
 
   const abrirEdicion = (carrera: Carrera) => {
-    setValores({ codigo: carrera.codigo, nombre: carrera.nombre, facultad: carrera.facultad, duracion: carrera.duracion, titulo: carrera.titulo })
+    setValores({ codigo: carrera.codigo, nombre: carrera.nombre, facultad: carrera.facultad, titulo: carrera.titulo })
     setFormAbierto(carrera.id)
   }
 
   const guardar = async () => {
-    const requerido = [valores.codigo, valores.nombre, valores.facultad, valores.duracion, valores.titulo]
+    const requerido = [valores.codigo, valores.nombre, valores.facultad, valores.titulo]
     if (requerido.some((valor) => !valor.trim())) {
       onNotify('Completá todos los campos de la carrera.')
       return
     }
     if (!esCodigoAcademicoValido(valores.codigo)) {
       onNotify(CODIGO_ACADEMICO_MENSAJE)
-      return
-    }
-    if (!/^\d+\s*(años?|año|meses?)$/i.test(valores.duracion.trim())) {
-      onNotify('Indicá la duración como una cantidad de años o meses, por ejemplo: 5 años.')
       return
     }
     if (formAbierto === 'nueva') {
@@ -145,10 +141,11 @@ function CarrerasPanel({ query, setQuery, onNotify }: { query: string; setQuery:
           <label>Código<input required maxLength={8} value={valores.codigo} onChange={(e) => setValores({ ...valores, codigo: normalizarCodigoAcademico(e.target.value) })} placeholder="Ej. ARQ-001" pattern="[A-Z]{3}[0-9]?-[0-9]{3}" title={CODIGO_ACADEMICO_MENSAJE} /><small>Formato: ARQ-001 o ARQ1-001</small></label>
           <label>Nombre<input required maxLength={120} value={valores.nombre} onChange={(e) => setValores({ ...valores, nombre: e.target.value })} placeholder="Ej. Ingeniería en Informática" /></label>
           <label>Facultad<input required maxLength={120} value={valores.facultad} onChange={(e) => setValores({ ...valores, facultad: e.target.value })} placeholder="Ej. Facultad de Ingeniería" /></label>
-          <label>Duración (años)
-            <input type="number" inputMode="numeric" min="1" max="15" step="1" required value={valores.duracion.match(/^\d+/)?.[0] ?? ''} onChange={(e) => setValores({ ...valores, duracion: e.target.value ? `${e.target.value} años` : '' })} />
-            <small>Ingresá la duración total en años.</small>
-          </label>
+          <div className="academic-auto-field" role="note">
+            <small>DURACIÓN CALCULADA</small>
+            <strong>{formAbierto === 'nueva' ? '0 años' : items.find((item) => item.id === formAbierto)?.duracion ?? '0 años'}</strong>
+            <span>Se actualiza automáticamente: 5 materias equivalen a un cuatrimestre.</span>
+          </div>
           <label>Título que otorga<input required maxLength={120} value={valores.titulo} onChange={(e) => setValores({ ...valores, titulo: e.target.value })} placeholder="Ej. Ingeniero/a en Informática" /></label>
         </div>
         <button className="primary-button" onClick={guardar}><Check size={16} /> Guardar</button>
@@ -355,6 +352,7 @@ function AsignaturasPanel({ onNotify }: { onNotify: (value: string) => void }) {
       onNotify('Asignatura creada correctamente')
       setValores({ codigo: '', nombre: '', anio: '', creditos: '', cargaHoraria: '' })
       setFormAbierto(false)
+      dispatch(listarCarreras())
     }
   }
 

@@ -1,0 +1,44 @@
+.regularity-context-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.regularity-result-context {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 8px 0 4px;
+  padding: 12px;
+  border: 1px solid #d9e4f2;
+  border-radius: 9px;
+  background: #fff;
+  color: #315986;
+}
+
+.regularity-result-context span { display: grid; gap: 3px; }
+.regularity-result-context strong { font-size: 12px; }
+.regularity-result-context small { color: #71839c; font-size: 10px; line-height: 1.45; }
+.result-card.conditional { border-color: #efd99c; background: #fffaf0; }
+.result-card.conditional .result-icon { background: #fff0c9; color: #a66e0a; }
+.result-card.approved,
+.result-card.rejected,
+.result-card.conditional { animation: regularity-result-in 180ms ease-out; }
+
+@keyframes regularity-result-in {
+  from { opacity: .45; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 760px) {
+  .regularity-context-fields { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .result-card.approved,
+  .result-card.rejected,
+  .result-card.conditional { animation: none; }
+}
+
