@@ -105,6 +105,20 @@ export interface CrearAsignacion {
   cantidadEstudiantes: number
 }
 
+export interface OcupacionAula {
+  tipo: 'CURSO' | 'ASIGNACION'
+  referenciaId: number
+  aulaId: number
+  asignaturaId: number
+  asignaturaCodigo: string
+  asignaturaNombre: string
+  cursoCodigo: string | null
+  fecha: string
+  horaInicio: string
+  horaFin: string
+  cantidadEstudiantes: number | null
+}
+
 export interface Curso {
   id: number
   codigo: string

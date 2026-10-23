@@ -1,5 +1,5 @@
 import { authAxios } from '../api/authAxios'
-import type { Asignacion, CrearAsignacion } from '../../types/api'
+import type { Asignacion, CrearAsignacion, OcupacionAula } from '../../types/api'
 
 export const asignacionesService = {
   listar: () =>
@@ -12,10 +12,10 @@ export const asignacionesService = {
     }).then((r) => r.data),
   agendaAulaPorFecha: (aulaId: number, fecha: string) =>
     authAxios
-      .get<Asignacion[]>(`/api/planificacion/aulas/${aulaId}/agenda`, { params: { fecha } })
+      .get<OcupacionAula[]>(`/api/planificacion/aulas/${aulaId}/agenda`, { params: { fecha } })
       .then((r) => r.data),
   agendaAula: (aulaId: number, desde: string, hasta: string) =>
-    authAxios.get<Asignacion[]>(`/api/planificacion/aulas/${aulaId}/agenda`, {
+    authAxios.get<OcupacionAula[]>(`/api/planificacion/aulas/${aulaId}/agenda`, {
       params: { desde, hasta },
     }).then((r) => r.data),
 }

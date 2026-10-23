@@ -9,7 +9,7 @@ import { Toolbar } from '../../components/ui/Toolbar'
 import { extraerMensajeError } from '../../services/api/erroresApi'
 import { crearAsignacion, limpiarAgenda, listarAsignaciones, obtenerAgendaAula } from '../../services/asignaciones/asignacionesSlice'
 import { catalogosService, type AulaCatalogo } from '../../services/catalogos/catalogosService'
-import type { Asignacion, Asignatura } from '../../types/api'
+import type { Asignatura, OcupacionAula } from '../../types/api'
 
 const asignacionVacia = { aulaId: '', asignaturaId: '', fecha: '', horaInicio: '', horaFin: '', cantidadEstudiantes: '' }
 const dias = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
@@ -207,7 +207,7 @@ export function AsignacionesPanel({ onNotify, query, setQuery }: { onNotify: (v:
 export function AgendaPanel() {
   const dispatch = useAppDispatch()
   const { agenda, cargandoAgenda, errorAgenda } = useAppSelector((state) => state.asignaciones)
-  const { asignaturas, aulas, cargandoCatalogos, errorCatalogos } = useCatalogoAsignaciones()
+  const { aulas, cargandoCatalogos, errorCatalogos } = useCatalogoAsignaciones()
   const [aulaId, setAulaId] = useState('')
   const [fecha, setFecha] = useState(() => fechaLocal(new Date()))
   const grillaDesde = inicioGrillaMes(fecha)
@@ -222,10 +222,9 @@ export function AgendaPanel() {
     return () => { dispatch(limpiarAgenda()) }
   }, [dispatch, aulaId, grillaDesde, grillaHasta])
 
-  const asignaturasPorId = new Map(asignaturas.map((asignatura) => [asignatura.id, asignatura]))
   const aulaSeleccionada = aulas.find((aula) => aula.id === Number(aulaId))
   const diasCalendario = Array.from({ length: 42 }, (_, indice) => agregarDias(grillaDesde, indice))
-  const reservasPorDia = new Map<string, Asignacion[]>()
+  const reservasPorDia = new Map<string, OcupacionAula[]>()
   for (const reserva of agenda) {
     const reservas = reservasPorDia.get(reserva.fecha) ?? []
     reservas.push(reserva)
@@ -249,7 +248,7 @@ export function AgendaPanel() {
         <button className="calendar-nav" type="button" onClick={() => setFecha(moverMes(fecha, 1))} aria-label="Mes siguiente"><CaretRight size={17} /></button>
         <button className="secondary-button" type="button" onClick={() => setFecha(fechaLocal(new Date()))}>Hoy</button>
       </div>
-      {aulaId && !cargandoAgenda && !errorAgenda && <span className="room-agenda-total" role="status">{agenda.length} {agenda.length === 1 ? 'reserva en el período' : 'reservas en el período'}</span>}
+      {aulaId && !cargandoAgenda && !errorAgenda && <span className="room-agenda-total" role="status">{agenda.length} {agenda.length === 1 ? 'ocupación en el período' : 'ocupaciones en el período'}</span>}
     </div>
     {errorAgenda && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {errorAgenda}</div>}
     {cargandoAgenda ? <SurfaceSkeleton label="agenda del aula" rows={4} /> : !aulaId ? (
@@ -265,7 +264,7 @@ export function AgendaPanel() {
               const reservas = reservasPorDia.get(dia) ?? []
               const seleccionado = dia === fecha
               const fueraDelMes = !perteneceAlMes(dia, fecha)
-              const etiqueta = `${mostrarFecha(dia)}: ${reservas.length === 0 ? 'sin reservas' : `${reservas.length} ${reservas.length === 1 ? 'reserva' : 'reservas'}`}`
+              const etiqueta = `${mostrarFecha(dia)}: ${reservas.length === 0 ? 'sin ocupaciones' : `${reservas.length} ${reservas.length === 1 ? 'ocupación' : 'ocupaciones'}`}`
               return <button
                 className={`room-calendar-day${seleccionado ? ' is-selected' : ''}${fueraDelMes ? ' is-outside' : ''}${dia === hoy ? ' is-today' : ''}${reservas.length ? ' is-busy' : ''}`}
                 type="button"
@@ -276,7 +275,7 @@ export function AgendaPanel() {
               >
                 <span className="room-calendar-date">{desdeISO(dia).getDate()}</span>
                 {reservas.length > 0 ? <>
-                  <strong>{reservas.length} {reservas.length === 1 ? 'reserva' : 'reservas'}</strong>
+                  <strong>{reservas.length} {reservas.length === 1 ? 'ocupación' : 'ocupaciones'}</strong>
                   <small>{mostrarHora(reservas[0].horaInicio)}{reservas.length > 1 ? ` · +${reservas.length - 1}` : ''}</small>
                 </> : <small className="room-calendar-free">Libre</small>}
               </button>
@@ -292,13 +291,14 @@ export function AgendaPanel() {
           {reservasSeleccionadas.length === 0 ? (
             <p className="room-agenda-available">El aula no tiene horarios ocupados este día.</p>
           ) : reservasSeleccionadas.map((reserva) => {
-            const asignatura = asignaturasPorId.get(reserva.asignaturaId)
-            return <div className="room-agenda-event" key={reserva.id}>
+            const esCurso = reserva.tipo === 'CURSO'
+            return <div className={`room-agenda-event${esCurso ? ' is-course' : ' is-assignment'}`} key={`${reserva.tipo}-${reserva.referenciaId}-${reserva.fecha}`}>
               <Clock size={17} aria-hidden="true" />
               <span>
+                <em className="room-agenda-event-type">{esCurso ? 'Curso recurrente' : 'Asignación puntual'}</em>
                 <strong>{mostrarHora(reserva.horaInicio)}–{mostrarHora(reserva.horaFin)}</strong>
-                <b>{asignatura?.nombre ?? `Asignatura #${reserva.asignaturaId}`}</b>
-                <small>{asignatura?.codigo ? `${asignatura.codigo} · ` : ''}{reserva.cantidadEstudiantes} estudiantes</small>
+                <b>{reserva.asignaturaNombre || `Asignatura #${reserva.asignaturaId}`}</b>
+                <small>{reserva.asignaturaCodigo}{esCurso && reserva.cursoCodigo ? ` · Curso ${reserva.cursoCodigo}` : ''}{reserva.cantidadEstudiantes ? ` · ${reserva.cantidadEstudiantes} estudiantes` : ''}</small>
               </span>
             </div>
           })}

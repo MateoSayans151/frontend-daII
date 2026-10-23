@@ -1,11 +1,11 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import { asignacionesService } from './asignacionesService'
 import { extraerMensajeError } from '../api/erroresApi'
-import type { Asignacion, CrearAsignacion } from '../../types/api'
+import type { Asignacion, CrearAsignacion, OcupacionAula } from '../../types/api'
 
 interface EstadoAsignaciones {
   items: Asignacion[]
-  agenda: Asignacion[]
+  agenda: OcupacionAula[]
   cargandoLista: boolean
   cargandoAgenda: boolean
   creando: boolean
@@ -32,7 +32,7 @@ export const listarAsignaciones = createAsyncThunk<Asignacion[], void, { rejectV
 )
 
 export const obtenerAgendaAula = createAsyncThunk<
-  Asignacion[], { aulaId: number; desde: string; hasta: string }, { rejectValue: string }
+  OcupacionAula[], { aulaId: number; desde: string; hasta: string }, { rejectValue: string }
 >('asignaciones/agendaAula', async ({ aulaId, desde, hasta }, { rejectWithValue }) => {
   try {
     return await asignacionesService.agendaAula(aulaId, desde, hasta)
