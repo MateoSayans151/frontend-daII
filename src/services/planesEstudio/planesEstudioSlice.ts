@@ -5,7 +5,7 @@ import { estadoListaInicial, type EstadoLista } from '../api/estadoLista'
 import type { CrearPlanDeEstudio, PlanDeEstudio } from '../../types/api'
 
 // Lista de planes de la carrera actualmente seleccionada (se reemplaza entera
-// al cambiar de carrera, igual que hace la pantalla de mocks hoy).
+// al cambiar de carrera y evita mezclar resultados de selecciones anteriores).
 export const listarPlanesDeEstudio = createAsyncThunk<PlanDeEstudio[], number, { rejectValue: string }>(
   'planesEstudio/listar',
   async (carreraId, { rejectWithValue }) => {

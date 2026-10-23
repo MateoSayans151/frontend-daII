@@ -2,13 +2,13 @@ import { isAxiosError } from 'axios'
 
 interface CuerpoErrorApi {
   mensaje?: string
+  detail?: string
   errores?: Record<string, string>
+  errors?: Record<string, string>
 }
 
 /**
- * El backend (ManejadorErrores) devuelve { mensaje, errores? } para los errores
- * de negocio y de validacion. Esta funcion lo traduce a un string listo para
- * mostrarle al usuario, con mensajes propios para los casos que no traen body.
+ * Traduce tanto application/problem+json como el formato legado a un mensaje visible.
  */
 export function extraerMensajeError(
   error: unknown,
@@ -22,12 +22,13 @@ export function extraerMensajeError(
       ? ` (HTTP ${estado}${metodo && ruta ? ` · ${metodo} ${ruta}` : ''})`
       : metodo && ruta ? ` (${metodo} ${ruta})` : ''
 
-    if (error.response?.data?.mensaje) {
-      const { mensaje, errores } = error.response.data
+    const mensajeApi = error.response?.data?.detail ?? error.response?.data?.mensaje
+    if (mensajeApi) {
+      const errores = error.response?.data?.errors ?? error.response?.data?.errores
       const detalles = errores
-        ? Object.entries(errores).map(([campo, detalle]) => `${campo}: ${detalle}`).join('; ')
+        ? Object.entries(errores).map(([campo, detalleCampo]) => `${campo}: ${detalleCampo}`).join('; ')
         : ''
-      return `${detalles ? `${mensaje}. ${detalles}` : mensaje}${contexto}`
+      return `${detalles ? `${mensajeApi}. ${detalles}` : mensajeApi}${contexto}`
     }
     if (estado === 401) return `Debes iniciar sesion para continuar${contexto}`
     if (estado === 403) return `No tenes permisos para realizar esta accion${contexto}`

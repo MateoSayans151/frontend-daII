@@ -1,7 +1,6 @@
 import { Eye, EyeSlash, SignIn, WarningCircle } from '@phosphor-icons/react'
 import { useState, type FormEvent } from 'react'
 import { useAppDispatch, useAppSelector } from '../../app/hooks'
-import { EMAIL_USUARIO_DEMO } from '../../app/modoDemo'
 import { iniciarSesion } from '../../services/usuarios/usuariosSlice'
 
 export function LoginView() {
@@ -74,11 +73,6 @@ export function LoginView() {
         <button className="primary-button" type="submit" disabled={cargando}>
           <SignIn size={17} /> {cargando ? 'Ingresando...' : 'Ingresar'}
         </button>
-
-        <p className="auth-hint">
-          Modo demo: ingresá con <code>{EMAIL_USUARIO_DEMO}</code> para explorar la app con datos
-          de prueba, sin necesidad de tener información cargada en el backend.
-        </p>
       </form>
     </div>
   )

@@ -10,8 +10,12 @@ export const asignacionesService = {
     authAxios.get<Asignacion[]>(`/api/planificacion/asignaturas/${asignaturaId}/agenda`, {
       params: { desde, hasta },
     }).then((r) => r.data),
-  agenda: (aulaId: number, fecha: string) =>
+  agendaAulaPorFecha: (aulaId: number, fecha: string) =>
     authAxios
       .get<Asignacion[]>(`/api/planificacion/aulas/${aulaId}/agenda`, { params: { fecha } })
       .then((r) => r.data),
+  agendaAula: (aulaId: number, desde: string, hasta: string) =>
+    authAxios.get<Asignacion[]>(`/api/planificacion/aulas/${aulaId}/agenda`, {
+      params: { desde, hasta },
+    }).then((r) => r.data),
 }

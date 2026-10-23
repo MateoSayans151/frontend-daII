@@ -2,11 +2,10 @@ import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/tool
 import { isAxiosError } from 'axios'
 import { usuariosService } from './usuariosService'
 import { extraerMensajeError } from '../api/erroresApi'
-import type { CrearUsuario, LoginUsuario, Usuario } from '../../types/api'
+import type { LoginUsuario, Usuario } from '../../types/api'
 
 interface EstadoUsuario {
   actual: Usuario | null
-  listado: Usuario[]
   verificandoSesion: boolean
   cargando: boolean
   error: string | null
@@ -14,7 +13,6 @@ interface EstadoUsuario {
 
 const estadoInicial: EstadoUsuario = {
   actual: null,
-  listado: [],
   verificandoSesion: true,
   cargando: false,
   error: null,
@@ -53,28 +51,6 @@ export const obtenerUsuarioActual = createAsyncThunk<Usuario, void, { rejectValu
   async (_, { rejectWithValue }) => {
     try {
       return await usuariosService.actual()
-    } catch (error) {
-      return rejectWithValue(extraerMensajeError(error))
-    }
-  },
-)
-
-export const crearUsuario = createAsyncThunk<Usuario, CrearUsuario, { rejectValue: string }>(
-  'usuarios/crear',
-  async (datos, { rejectWithValue }) => {
-    try {
-      return await usuariosService.crear(datos)
-    } catch (error) {
-      return rejectWithValue(extraerMensajeError(error))
-    }
-  },
-)
-
-export const listarUsuarios = createAsyncThunk<Usuario[], void, { rejectValue: string }>(
-  'usuarios/listar',
-  async (_, { rejectWithValue }) => {
-    try {
-      return await usuariosService.listar()
     } catch (error) {
       return rejectWithValue(extraerMensajeError(error))
     }
@@ -120,26 +96,6 @@ const usuariosSlice = createSlice({
         // logueados, sin mostrar esto como un error visible al usuario.
         state.verificandoSesion = false
         state.actual = null
-      })
-
-      .addCase(crearUsuario.fulfilled, (state, action: PayloadAction<Usuario>) => {
-        state.listado.push(action.payload)
-      })
-      .addCase(crearUsuario.rejected, (state, action) => {
-        state.error = action.payload ?? 'No se pudo crear el usuario'
-      })
-
-      .addCase(listarUsuarios.pending, (state) => {
-        state.cargando = true
-        state.error = null
-      })
-      .addCase(listarUsuarios.fulfilled, (state, action: PayloadAction<Usuario[]>) => {
-        state.cargando = false
-        state.listado = action.payload
-      })
-      .addCase(listarUsuarios.rejected, (state, action) => {
-        state.cargando = false
-        state.error = action.payload ?? 'No se pudo obtener el listado de usuarios'
       })
   },
 })

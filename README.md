@@ -1,66 +1,78 @@
 # UADEnet - Gestión Académica y Planificación
 
-Frontend del módulo 9 del TPO de Desarrollo de Aplicaciones II.
+Frontend React, TypeScript y Vite del módulo de Gestión Académica.
 
-## Tecnologías
+## Estado actual
 
-- React
-- TypeScript
-- Vite
+Todas las pantallas activas consumen el backend. El modo demo, los datos de ejemplo en
+`localStorage` y las pantallas mock fueron eliminados. Una autenticación exitosa siempre
+abre `AppReal` y las altas, consultas y modificaciones se realizan mediante los servicios
+HTTP de `src/services`.
+
+La autenticación disponible hoy es la sesión local del backend:
+
+- `POST /api/auth/login` crea la sesión;
+- `GET /api/auth/me` reconstruye la sesión al recargar;
+- `POST /api/auth/logout` la invalida;
+- Axios envía la cookie `JSESSIONID` con `withCredentials`.
+
+No hay llamadas desde el frontend a rutas inexistentes como `/api/usuarios`.
 
 ## Inicio local
 
-1. Copiá `.env.example` como `.env`.
-2. Ejecutá `npm install`.
-3. Ejecutá `npm run dev`.
+1. Copiar `.env.example` como `.env`.
+2. Configurar `VITE_API_URL=http://localhost:8080`.
+3. Ejecutar `npm install`.
+4. Ejecutar `npm run dev`.
 
-En el entorno local actual, configurá `VITE_API_URL=http://localhost:8080`. El cliente
-consume directamente las rutas `/api/**` del backend y envía la cookie `JSESSIONID`
-mediante `withCredentials`.
+```powershell
+npm.cmd run dev
+```
 
-La integración objetivo todavía pendiente usará `VITE_CORE_URL`, iniciará sesión en CORE
-y consumirá el módulo mediante el gateway `/api/v1/academic/*`. En ese estado, el access
-token quedará sólo en memoria y CORE administrará el refresh token en una cookie
-`HttpOnly`. No se debe describir este flujo objetivo como si ya estuviera implementado.
+## Pantallas conectadas
 
-El inventario y las brechas de integración están documentados en el
-[`contrato del backend`](../Backend/Backend/docs/CONTRATO_PORTALES_ALUMNOS_Y_DOCENCIA.md)
-y en el
-[`mapa interactivo`](../Backend/Backend/docs/arquitectura-interactiva/index.html).
+| Sección | API utilizada |
+| --- | --- |
+| Carreras | `/api/academica/carreras` |
+| Planes | `/api/academica/carreras/{id}/planes` y `/api/academica/planes/{id}/pdf` |
+| Asignaturas | `/api/academica/planes/{id}/asignaturas` |
+| Correlatividades | `/api/academica/asignaturas/{id}/correlatividades` |
+| Sedes y aulas | `/api/planificacion/sedes` y rutas de aulas por sede |
+| Cursos | `/api/planificacion/cursos` y rutas anidadas de horario, docentes e inscripciones |
+| Asignaciones | `/api/planificacion/asignaciones` |
+| Agenda | `/api/planificacion/aulas/{id}/agenda?desde=&hasta=` |
+| Períodos | `/api/planificacion/periodos` |
+| Turnos | `/api/planificacion/turnos-examen` |
+| Regularidad | `/api/regularidad/validar` |
 
-## Estructura del frontend
+La agenda selecciona un aula, consulta un rango de 42 días para cubrir el mes visible y
+muestra las reservas del día elegido.
 
-El código está organizado por funcionalidades para que cada integrante pueda trabajar en un módulo sin concentrar toda la lógica en `App.tsx`:
+## Estructura
 
 ```text
 src/
-├── app/             navegación y configuración general
-├── layouts/         estructuras visuales compartidas
-├── components/      componentes reutilizables de interfaz
-├── features/        pantallas y lógica de cada módulo
-│   ├── academica/
-│   ├── planificacion/
-│   ├── ciclo/
-│   └── dashboard/
-├── data/            datos mocks de la demo
-├── services/        cliente y servicios de integración con la API
-├── types/           tipos TypeScript del dominio
-└── App.tsx          orquestación de estado y selección de pantalla
+├── app/             store, hooks y navegación
+├── components/      componentes reutilizables
+├── features/real/   pantallas conectadas al backend
+├── layouts/         estructura general de la aplicación
+├── services/        cliente Axios, servicios y slices de Redux
+├── types/           contratos TypeScript de la API
+└── App.tsx          autenticación y entrada a la aplicación real
 ```
 
-Los datos de prueba están en `src/data/mocks.ts`. Cuando conectemos Spring Boot, cada llamada se agregará dentro de `src/services/api/`, sin tener que modificar la estructura visual de las pantallas.
+## Integración con CORE
 
-La demo actual persiste los cambios en `localStorage` durante el desarrollo. Se pueden reiniciar limpiando los datos del sitio desde el navegador.
+El frontend todavía no usa el login ni el gateway de CORE. No debe configurarse una URL
+ficticia para simular esa integración. La migración requiere primero que CORE publique
+el módulo y confirme el mapeo de rutas, JWT, permisos y ambientes.
 
-## Flujos mock disponibles
+Los pedidos necesarios y las brechas comprobadas están en
+[`INTEGRACION_CORE.md`](../Backend/Backend/docs/INTEGRACION_CORE.md).
 
-- Carreras, planes y asignaturas: alta, edición, búsqueda, filtro por estado, desactivación y restauración.
-- Correlatividades: selección de asignatura, alta y baja de requisitos previos.
-- Sedes y aulas: alta de sedes y aulas, edición, control de capacidad y desactivación.
-- Asignaciones: alta y edición de horarios con detección de superposiciones por aula.
-- Períodos y turnos: alta, edición, filtros y validación de rangos de fechas.
-- Regularidad: validación de asistencia mínima del 75 % y promedio mínimo de 6.
+## Verificación
 
-## Cursos conectados al backend
-
-En una sesión conectada al backend, la pantalla **Cursos** permite crear y filtrar cursos por período, consultar su detalle, actualizar el estado, asignar docentes, inscribir alumnos, cargar resultados y agregar horarios por aula. Cada curso se crea con `turno` (`TARDE`, `MAÑANA` o `NOCHE`), `horaInicio` y `horaFin` en formato `HH:mm`; esos datos se muestran en el listado y el detalle. Consume `/api/planificacion/cursos` y sus rutas anidadas de docentes, inscripciones y horarios; los errores de validación de capacidad, fechas, sede y superposición se muestran desde la respuesta del backend. El usuario de demostración conserva una vista de cursos de ejemplo local.
+```powershell
+npm.cmd run lint
+npm.cmd run build
+```

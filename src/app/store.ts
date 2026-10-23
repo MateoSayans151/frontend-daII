@@ -29,8 +29,7 @@ export const store = configureStore({
   },
 })
 
-// El access token no persiste en el navegador. Al iniciar se rota el refresh
-// token HttpOnly en CORE y se reconstruye la sesion en memoria.
+// Reconstruye la sesión local a partir de la cookie HttpOnly JSESSIONID.
 store.dispatch(obtenerUsuarioActual())
 
 export type RootState = ReturnType<typeof store.getState>

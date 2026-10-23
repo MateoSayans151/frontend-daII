@@ -31,11 +31,11 @@ export const listarAsignaciones = createAsyncThunk<Asignacion[], void, { rejectV
   },
 )
 
-export const obtenerAgendaAsignatura = createAsyncThunk<
-  Asignacion[], { asignaturaId: number; desde: string; hasta: string }, { rejectValue: string }
->('asignaciones/agendaAsignatura', async ({ asignaturaId, desde, hasta }, { rejectWithValue }) => {
+export const obtenerAgendaAula = createAsyncThunk<
+  Asignacion[], { aulaId: number; desde: string; hasta: string }, { rejectValue: string }
+>('asignaciones/agendaAula', async ({ aulaId, desde, hasta }, { rejectWithValue }) => {
   try {
-    return await asignacionesService.agendaAsignatura(asignaturaId, desde, hasta)
+    return await asignacionesService.agendaAula(aulaId, desde, hasta)
   } catch (error) {
     return rejectWithValue(extraerMensajeError(error))
   }
@@ -81,19 +81,19 @@ const asignacionesSlice = createSlice({
         state.errorLista = action.payload ?? 'No se pudieron cargar las asignaciones'
         state.solicitudLista = null
       })
-      .addCase(obtenerAgendaAsignatura.pending, (state, action) => {
+      .addCase(obtenerAgendaAula.pending, (state, action) => {
         state.cargandoAgenda = true
         state.errorAgenda = null
         state.agenda = []
         state.solicitudAgenda = action.meta.requestId
       })
-      .addCase(obtenerAgendaAsignatura.fulfilled, (state, action) => {
+      .addCase(obtenerAgendaAula.fulfilled, (state, action) => {
         if (state.solicitudAgenda !== action.meta.requestId) return
         state.cargandoAgenda = false
         state.agenda = action.payload
         state.solicitudAgenda = null
       })
-      .addCase(obtenerAgendaAsignatura.rejected, (state, action) => {
+      .addCase(obtenerAgendaAula.rejected, (state, action) => {
         if (state.solicitudAgenda !== action.meta.requestId) return
         state.cargandoAgenda = false
         state.errorAgenda = action.payload ?? 'No se pudo obtener la agenda'

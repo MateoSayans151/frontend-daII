@@ -21,10 +21,7 @@ const academicScreens: Screen[] = [
 const planningScreens: Screen[] = ["Sedes y aulas", "Cursos", "Asignaciones", "Agenda"];
 const cycleScreens: Screen[] = ["Períodos", "Turnos de examen"];
 
-// Contraparte de AppMock.tsx pero contra el backend real: cada pantalla
-// despacha sus propios thunks (services/*/*.slice.ts) en vez de leer arrays
-// locales. No reutiliza el Modal generico de mocks porque los formularios
-// reales necesitan referenciar IDs concretos (carreraId, planId, etc.).
+// Cada pantalla despacha sus propios thunks y usa identificadores reales del backend.
 function AppReal() {
   const dispatch = useAppDispatch();
   const usuario = useAppSelector((state) => state.usuarios.actual);

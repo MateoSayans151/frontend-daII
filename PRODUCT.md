@@ -8,7 +8,7 @@ web
 
 ## Stack
 
-React + TypeScript + Vite. El frontend consumirá la API REST del backend Spring Boot cuando termine la etapa de mocks.
+React + TypeScript + Vite, conectado a la API REST del backend Spring Boot mediante Axios y Redux Toolkit.
 
 ## Users
 
@@ -24,7 +24,7 @@ Un único espacio de trabajo conecta la estructura académica con su planificaci
 
 ## Operating Context
 
-El portal se usa desde computadoras del equipo administrativo. En esta etapa se evalúan flujos y pantallas con datos mock; la persistencia y autenticación real quedarán para una etapa posterior.
+El portal se usa desde computadoras del equipo administrativo. Las pantallas trabajan con datos persistidos por el backend. En desarrollo se usa autenticación local por sesión; la autenticación y el gateway de CORE siguen pendientes de coordinación.
 
 ## Capabilities and Constraints
 
@@ -33,8 +33,8 @@ El portal se usa desde computadoras del equipo administrativo. En esta etapa se 
 - Asignar aulas a cursos evitando superposiciones horarias.
 - Definir fechas de inicio y fin de cuatrimestres y turnos de exámenes finales.
 - Validar regularidad a partir de asistencia mínima y promedio mínimo.
-- La API existente usa sesiones/HTTP Basic y restringe escrituras a usuarios ADMINISTRATIVO.
-- La UI debe conservar los textos en español y etiquetar todo dato de prueba como mock o demostración hasta integrar la API.
+- La API local usa una sesión HTTP con cookie `JSESSIONID` y restringe la administración a roles académicos.
+- La UI debe conservar los textos en español y mostrar claramente errores, estados vacíos y cargas provenientes de la API.
 
 ## Brand Commitments
 
@@ -43,16 +43,16 @@ El producto se llama UADEnet. La interfaz está dirigida a un entorno universita
 ## Evidence on Hand
 
 - Consigna del TPO: `/Users/macbookair/Downloads/TPO - DEA II 2Q 2026 (1).pdf`.
-- Mockups de Figma mencionados por el usuario: enlace específico pendiente.
+- Lineamientos visuales consolidados en los componentes y estilos del repositorio.
 - Backend documentado por el usuario con endpoints REST en `http://localhost:8080`.
-- Los datos visibles en la primera versión son sintéticos y no representan información real de la universidad.
+- Contrato y pedidos pendientes de CORE en `../Backend/Backend/docs/INTEGRACION_CORE.md`.
 
 ## Product Principles
 
 - Claridad antes que densidad: cada pantalla debe responder qué se puede hacer y cuál es el siguiente paso.
 - Una fuente de verdad: la estructura académica y la planificación se consultan desde el mismo espacio.
 - Validaciones visibles: los conflictos y requisitos deben aparecer antes de confirmar una operación.
-- Datos de prueba honestos: todo contenido mock debe ser reconocible como demostración.
+- Fuente de datos verificable: toda pantalla operativa debe consumir un endpoint implementado y mostrar sus fallos sin sustituirlos por datos locales.
 
 ## Accessibility & Inclusion
 

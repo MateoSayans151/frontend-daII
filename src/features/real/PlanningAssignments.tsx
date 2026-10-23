@@ -1,4 +1,4 @@
-import { CaretLeft, CaretRight, Plus, WarningCircle } from '@phosphor-icons/react'
+import { CaretLeft, CaretRight, Clock, Plus, WarningCircle } from '@phosphor-icons/react'
 import { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../../app/hooks'
 import { AcademicSelect, type AcademicSelectOption } from '../../components/ui/AcademicSelect'
@@ -7,7 +7,7 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { SurfaceSkeleton } from '../../components/ui/SurfaceSkeleton'
 import { Toolbar } from '../../components/ui/Toolbar'
 import { extraerMensajeError } from '../../services/api/erroresApi'
-import { crearAsignacion, limpiarAgenda, listarAsignaciones, obtenerAgendaAsignatura } from '../../services/asignaciones/asignacionesSlice'
+import { crearAsignacion, limpiarAgenda, listarAsignaciones, obtenerAgendaAula } from '../../services/asignaciones/asignacionesSlice'
 import { catalogosService, type AulaCatalogo } from '../../services/catalogos/catalogosService'
 import type { Asignacion, Asignatura } from '../../types/api'
 
@@ -31,6 +31,27 @@ function agregarDias(valor: string, cantidad: number): string {
 function inicioSemana(valor: string): string {
   const fecha = desdeISO(valor)
   return agregarDias(valor, -((fecha.getDay() + 6) % 7))
+}
+
+function moverMes(valor: string, cantidad: number): string {
+  const origen = desdeISO(valor)
+  const ultimoDiaDestino = new Date(origen.getFullYear(), origen.getMonth() + cantidad + 1, 0).getDate()
+  return fechaLocal(new Date(
+    origen.getFullYear(),
+    origen.getMonth() + cantidad,
+    Math.min(origen.getDate(), ultimoDiaDestino),
+  ))
+}
+
+function inicioGrillaMes(valor: string): string {
+  const fecha = desdeISO(valor)
+  return inicioSemana(fechaLocal(new Date(fecha.getFullYear(), fecha.getMonth(), 1)))
+}
+
+function perteneceAlMes(fecha: string, mes: string): boolean {
+  const dia = desdeISO(fecha)
+  const referencia = desdeISO(mes)
+  return dia.getFullYear() === referencia.getFullYear() && dia.getMonth() === referencia.getMonth()
 }
 
 function mostrarFecha(valor: string): string {
@@ -187,65 +208,101 @@ export function AgendaPanel() {
   const dispatch = useAppDispatch()
   const { agenda, cargandoAgenda, errorAgenda } = useAppSelector((state) => state.asignaciones)
   const { asignaturas, aulas, cargandoCatalogos, errorCatalogos } = useCatalogoAsignaciones()
-  const [asignaturaId, setAsignaturaId] = useState('')
+  const [aulaId, setAulaId] = useState('')
   const [fecha, setFecha] = useState(() => fechaLocal(new Date()))
-  const semanaDesde = inicioSemana(fecha)
-  const semanaHasta = agregarDias(semanaDesde, 6)
+  const grillaDesde = inicioGrillaMes(fecha)
+  const grillaHasta = agregarDias(grillaDesde, 41)
 
   useEffect(() => {
-    if (!asignaturaId) {
+    if (!aulaId) {
       dispatch(limpiarAgenda())
       return
     }
-    dispatch(obtenerAgendaAsignatura({ asignaturaId: Number(asignaturaId), desde: semanaDesde, hasta: semanaHasta }))
+    dispatch(obtenerAgendaAula({ aulaId: Number(aulaId), desde: grillaDesde, hasta: grillaHasta }))
     return () => { dispatch(limpiarAgenda()) }
-  }, [dispatch, asignaturaId, semanaDesde, semanaHasta])
+  }, [dispatch, aulaId, grillaDesde, grillaHasta])
 
-  const aulasPorId = new Map(aulas.map((aula) => [aula.id, aula]))
-  const diasSemana = dias.map((nombre, indice) => ({ nombre, fecha: agregarDias(semanaDesde, indice) }))
+  const asignaturasPorId = new Map(asignaturas.map((asignatura) => [asignatura.id, asignatura]))
+  const aulaSeleccionada = aulas.find((aula) => aula.id === Number(aulaId))
+  const diasCalendario = Array.from({ length: 42 }, (_, indice) => agregarDias(grillaDesde, indice))
   const reservasPorDia = new Map<string, Asignacion[]>()
   for (const reserva of agenda) {
     const reservas = reservasPorDia.get(reserva.fecha) ?? []
     reservas.push(reserva)
     reservasPorDia.set(reserva.fecha, reservas)
   }
+  const reservasSeleccionadas = reservasPorDia.get(fecha) ?? []
+  const tituloMes = desdeISO(fecha).toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })
+  const hoy = fechaLocal(new Date())
 
-  return <article className="panel subject-agenda-panel">
-    <p className="muted-copy">Elegí una asignatura para ver los horarios ocupados durante la semana.</p>
+  return <article className="panel room-agenda-panel">
+    <p className="muted-copy">Elegí un aula para consultar sus días y horarios ocupados.</p>
     <div className="form-grid agenda-filter-grid">
-      <AcademicSelect label="Asignatura" value={asignaturaId} options={opcionesAsignatura(asignaturas)} onChange={setAsignaturaId} placeholder="Seleccioná una asignatura" searchPlaceholder="Buscar asignatura por nombre o código..." emptyMessage="No hay asignaturas disponibles." loading={cargandoCatalogos} disabled={!cargandoCatalogos && asignaturas.length === 0} />
-      <CalendarDatePicker label="Ir a la semana de" value={fecha} onChange={setFecha} />
+      <AcademicSelect label="Aula" value={aulaId} options={opcionesAula(aulas)} onChange={setAulaId} placeholder="Seleccioná un aula" searchPlaceholder="Buscar aula por nombre, código o sede..." emptyMessage="No hay aulas disponibles." loading={cargandoCatalogos} disabled={!cargandoCatalogos && aulas.length === 0} />
+      <CalendarDatePicker label="Ir a una fecha" value={fecha} onChange={setFecha} />
     </div>
     {errorCatalogos && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {errorCatalogos}</div>}
-    <div className="subject-agenda-toolbar">
-      <div className="subject-agenda-nav">
-        <button className="calendar-nav" type="button" onClick={() => setFecha(agregarDias(semanaDesde, -7))} aria-label="Semana anterior"><CaretLeft size={17} /></button>
-        <strong>{mostrarFecha(semanaDesde)} – {mostrarFecha(semanaHasta)}</strong>
-        <button className="calendar-nav" type="button" onClick={() => setFecha(agregarDias(semanaDesde, 7))} aria-label="Semana siguiente"><CaretRight size={17} /></button>
+    <div className="room-agenda-toolbar">
+      <div className="room-agenda-nav">
+        <button className="calendar-nav" type="button" onClick={() => setFecha(moverMes(fecha, -1))} aria-label="Mes anterior"><CaretLeft size={17} /></button>
+        <strong>{tituloMes}</strong>
+        <button className="calendar-nav" type="button" onClick={() => setFecha(moverMes(fecha, 1))} aria-label="Mes siguiente"><CaretRight size={17} /></button>
         <button className="secondary-button" type="button" onClick={() => setFecha(fechaLocal(new Date()))}>Hoy</button>
       </div>
-      {asignaturaId && !cargandoAgenda && !errorAgenda && <span className="subject-agenda-total" role="status">{agenda.length} {agenda.length === 1 ? 'horario ocupado' : 'horarios ocupados'}</span>}
+      {aulaId && !cargandoAgenda && !errorAgenda && <span className="room-agenda-total" role="status">{agenda.length} {agenda.length === 1 ? 'reserva en el período' : 'reservas en el período'}</span>}
     </div>
     {errorAgenda && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {errorAgenda}</div>}
-    {cargandoAgenda ? <SurfaceSkeleton label="agenda de la asignatura" rows={3} /> : !asignaturaId ? (
-      <p className="agenda-empty" role="status">Seleccioná una asignatura para consultar su agenda.</p>
+    {cargandoAgenda ? <SurfaceSkeleton label="agenda del aula" rows={4} /> : !aulaId ? (
+      <p className="agenda-empty" role="status">Seleccioná un aula para ver su disponibilidad mensual.</p>
     ) : !errorAgenda && (
-      <div className="subject-agenda-grid" aria-label="Agenda semanal de la asignatura">
-        {diasSemana.map((dia) => {
-          const reservas = reservasPorDia.get(dia.fecha) ?? []
-          return <section className="subject-agenda-day" key={dia.fecha} aria-label={`${dia.nombre} ${mostrarFecha(dia.fecha)}`}>
-            <div className="subject-agenda-day-head"><strong>{dia.nombre}</strong><span>{mostrarFecha(dia.fecha)}</span></div>
-            <small className="subject-agenda-count">{reservas.length} {reservas.length === 1 ? 'reserva' : 'reservas'}</small>
-            {reservas.length === 0 ? <p className="subject-agenda-free">Sin horarios ocupados</p> : reservas.map((reserva) => {
-              const aula = aulasPorId.get(reserva.aulaId)
-              return <div className="subject-agenda-event" key={reserva.id}>
-                <strong>{mostrarHora(reserva.horaInicio)}–{mostrarHora(reserva.horaFin)}</strong>
-                <span>{aula?.nombre ?? `Aula #${reserva.aulaId}`}</span>
-                <small>{aula?.sedeNombre ? `${aula.sedeNombre} · ` : ''}{reserva.cantidadEstudiantes} estudiantes</small>
-              </div>
+      <div className="room-agenda-layout">
+        <section className="room-calendar" aria-label={`Agenda de ${aulaSeleccionada?.nombre ?? 'aula'} para ${tituloMes}`}>
+          <div className="room-calendar-weekdays" aria-hidden="true">
+            {dias.map((dia) => <span key={dia}>{dia.slice(0, 3)}</span>)}
+          </div>
+          <div className="room-calendar-grid">
+            {diasCalendario.map((dia) => {
+              const reservas = reservasPorDia.get(dia) ?? []
+              const seleccionado = dia === fecha
+              const fueraDelMes = !perteneceAlMes(dia, fecha)
+              const etiqueta = `${mostrarFecha(dia)}: ${reservas.length === 0 ? 'sin reservas' : `${reservas.length} ${reservas.length === 1 ? 'reserva' : 'reservas'}`}`
+              return <button
+                className={`room-calendar-day${seleccionado ? ' is-selected' : ''}${fueraDelMes ? ' is-outside' : ''}${dia === hoy ? ' is-today' : ''}${reservas.length ? ' is-busy' : ''}`}
+                type="button"
+                key={dia}
+                aria-label={etiqueta}
+                aria-pressed={seleccionado}
+                onClick={() => setFecha(dia)}
+              >
+                <span className="room-calendar-date">{desdeISO(dia).getDate()}</span>
+                {reservas.length > 0 ? <>
+                  <strong>{reservas.length} {reservas.length === 1 ? 'reserva' : 'reservas'}</strong>
+                  <small>{mostrarHora(reservas[0].horaInicio)}{reservas.length > 1 ? ` · +${reservas.length - 1}` : ''}</small>
+                </> : <small className="room-calendar-free">Libre</small>}
+              </button>
             })}
-          </section>
-        })}
+          </div>
+        </section>
+        <aside className="room-agenda-detail" aria-live="polite">
+          <div className="room-agenda-detail-head">
+            <span>Detalle del día</span>
+            <strong>{mostrarFecha(fecha)}</strong>
+            <small>{aulaSeleccionada?.nombre} · {aulaSeleccionada?.sedeNombre}</small>
+          </div>
+          {reservasSeleccionadas.length === 0 ? (
+            <p className="room-agenda-available">El aula no tiene horarios ocupados este día.</p>
+          ) : reservasSeleccionadas.map((reserva) => {
+            const asignatura = asignaturasPorId.get(reserva.asignaturaId)
+            return <div className="room-agenda-event" key={reserva.id}>
+              <Clock size={17} aria-hidden="true" />
+              <span>
+                <strong>{mostrarHora(reserva.horaInicio)}–{mostrarHora(reserva.horaFin)}</strong>
+                <b>{asignatura?.nombre ?? `Asignatura #${reserva.asignaturaId}`}</b>
+                <small>{asignatura?.codigo ? `${asignatura.codigo} · ` : ''}{reserva.cantidadEstudiantes} estudiantes</small>
+              </span>
+            </div>
+          })}
+        </aside>
       </div>
     )}
   </article>

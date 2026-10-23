@@ -1,5 +1,4 @@
-// Tipos que reflejan 1 a 1 los DTOs del backend (Modelos/*.java).
-// Viven separados de types/domain.ts, que todavia alimenta las pantallas mock.
+// Tipos que reflejan los DTOs del backend (Modelos/*.java).
 
 export type EstadoAcademico = 'ACTIVA' | 'BORRADOR' | 'INACTIVA'
 
@@ -245,12 +244,6 @@ export interface Usuario {
   permissions: string[]
   status: string
   activo: boolean
-}
-export interface CrearUsuario {
-  nombre: string
-  email: string
-  password: string
-  permiso: Permiso
 }
 export interface LoginUsuario {
   email: string
