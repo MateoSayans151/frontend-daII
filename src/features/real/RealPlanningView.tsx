@@ -127,7 +127,7 @@ function SedesYAulasPanel({ query, setQuery, onNotify }: { query: string; setQue
             <article className="panel planning-form-panel">
               <div className="form-grid">
                 <label>Código<input required maxLength={80} value={nuevaAula.codigo} onChange={(e) => setNuevaAula({ ...nuevaAula, codigo: e.target.value })} placeholder="Ej. Aula 204" /></label>
-                <label>Nombre (opcional)<input maxLength={255} value={nuevaAula.nombre} onChange={(e) => setNuevaAula({ ...nuevaAula, nombre: e.target.value })} placeholder="Ej. Aula de informática" /></label>
+                <label>Edificio (opcional)<input maxLength={255} value={nuevaAula.nombre} onChange={(e) => setNuevaAula({ ...nuevaAula, nombre: e.target.value })} placeholder="Ej. Aula de informática" /></label>
                 <label>Capacidad máxima
                   <input type="number" inputMode="numeric" min="1" max="100" step="1" required value={nuevaAula.capacidadMaxima} onChange={(e) => setNuevaAula({ ...nuevaAula, capacidadMaxima: e.target.value })} />
                   <small>Entre 1 y 100 personas.</small>
@@ -139,7 +139,7 @@ function SedesYAulasPanel({ query, setQuery, onNotify }: { query: string; setQue
           {aulas.cargando && aulasVisibles.length === 0 ? <SurfaceSkeleton label="aulas" /> : (
             <div className="table-wrap">
               <table>
-                <thead><tr><th>Código</th><th>Nombre</th><th>Capacidad</th></tr></thead>
+                <thead><tr><th>Código</th><th>Edificio</th><th>Capacidad</th></tr></thead>
                 <tbody>{aulasVisibles.map((aula) => <tr key={aula.id}><td><strong>{aula.codigo}</strong></td><td>{aula.nombre}</td><td>{aula.capacidadMaxima} personas</td></tr>)}</tbody>
               </table>
               {!aulas.cargando && aulasVisibles.length === 0 && <EmptyState query="" />}

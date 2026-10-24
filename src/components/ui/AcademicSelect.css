@@ -8,7 +8,7 @@
 .academic-select__summary{display:grid;gap:4px;min-width:0}
 .academic-select__topline{display:flex;align-items:center;gap:8px;min-width:0}
 .academic-select__code{width:max-content;max-width:100%;overflow:hidden;padding:3px 6px;border:1px solid #d9e5f4;border-radius:5px;background:#f3f7fc;color:#5074a2;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9px;font-weight:700;letter-spacing:.025em;text-overflow:ellipsis;white-space:nowrap}
-.academic-select__selected-name{overflow:hidden;color:#21395f;font-size:13px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}
+.academic-select__selected-name{flex:1;min-width:0;overflow:hidden;color:#21395f;font-size:13px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}
 .academic-select__summary small{overflow:hidden;color:#6e819b;font-size:10px;font-weight:400;text-overflow:ellipsis;white-space:nowrap}
 .academic-select__summary .academic-select__meta{color:#8997a9}
 .academic-select__placeholder{color:#5a6f8e;font-size:13px;font-weight:700}
@@ -31,6 +31,7 @@
 .academic-select__option.is-selected{border-color:#c8dcf5;background:#eef5ff}
 .academic-select__option-copy{display:grid;gap:4px;min-width:0}
 .academic-select__option-copy strong{overflow-wrap:anywhere;color:#20385e;font-size:12px;font-weight:700;line-height:1.35}
+.academic-select__option-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .academic-select__option-copy small{overflow-wrap:anywhere;color:#70829b;font-size:10px;line-height:1.4}
 .academic-select__option-copy small.academic-select__meta{color:#8a98aa}
 .academic-select__badge{margin-left:auto;padding:3px 6px;border-radius:999px;font-size:8px;font-weight:800;letter-spacing:.025em;line-height:1.2;white-space:nowrap}

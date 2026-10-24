@@ -313,7 +313,6 @@ export function CursosPanel({ query, setQuery, onNotify }: { query: string; setQ
             <label>
               Código
               <input required maxLength={8} value={valores.codigo} onChange={(event) => setValores({ ...valores, codigo: normalizarCodigoAcademico(event.target.value) })} placeholder="Ej. ARQ1-001" pattern="[A-Z]{3}[0-9]?-[0-9]{3}" title={CODIGO_ACADEMICO_MENSAJE} />
-              <small>Formato: ARQ-001 o ARQ1-001</small>
             </label>
             <AcademicSelect label="Asignatura" value={String(valores.asignaturaId || '')} options={opcionesAsignatura} onChange={(value) => setValores({ ...valores, asignaturaId: Number(value) })} placeholder="Seleccioná una asignatura" searchPlaceholder="Buscar asignatura por nombre o código..." emptyMessage="No hay asignaturas disponibles." loading={cargandoCatalogos} disabled={!cargandoCatalogos && opcionesAsignatura.length === 0} />
             <AcademicSelect label="Período" value={String(valores.periodoId || '')} options={opcionesPeriodo} onChange={(value) => setValores({ ...valores, periodoId: Number(value) })} placeholder="Seleccioná un período" searchPlaceholder="Buscar período..." emptyMessage="No hay períodos disponibles." loading={cargandoCatalogos} disabled={!cargandoCatalogos && opcionesPeriodo.length === 0} />
@@ -380,7 +379,11 @@ export function CursosPanel({ query, setQuery, onNotify }: { query: string; setQ
                   <td>{curso.cupoMaximo}</td>
                   <td>{fechaBreve(curso.fechaInicio)} – {fechaBreve(curso.fechaFin)}</td>
                   <td>{nombreDia(curso.diaSemana)} · {curso.turno?.toLocaleLowerCase() ?? 'Sin turno'}{curso.horaInicio && curso.horaFin ? ` · ${curso.horaInicio.slice(0, 5)}–${curso.horaFin.slice(0, 5)}` : ''}</td>
-                  <td>{aula?.nombre ?? curso.aulaNombre ?? (curso.aulaId ? 'Aula no disponible' : 'Sin aula')}</td>
+                  <td>
+                    {aula
+                      ? <><strong>{aula.codigo}</strong> · {aula.nombre}</>
+                      : curso.aulaNombre ?? (curso.aulaId ? 'Aula no disponible' : 'Sin aula')}
+                  </td>
                   <td>{nombreEstadoCurso(curso.estado)}</td>
                   <td><button className="secondary-button" type="button" onClick={() => abrirDetalle(curso.id)}>Administrar</button></td>
                 </tr>

@@ -113,6 +113,7 @@ export function AsignacionesPanel({ onNotify, query, setQuery }: { onNotify: (v:
 
   const asignaturasPorId = new Map(asignaturas.map((item) => [item.id, item]))
   const aulasPorId = new Map(aulas.map((item) => [item.id, item]))
+  const capacidadAulaSeleccionada = aulasPorId.get(Number(valores.aulaId))?.capacidadMaxima
   const asignacionesVisibles = items.filter((item) => {
     const asignatura = asignaturasPorId.get(item.asignaturaId)
     const aula = aulasPorId.get(item.aulaId)
@@ -135,7 +136,12 @@ export function AsignacionesPanel({ onNotify, query, setQuery }: { onNotify: (v:
       onNotify('Completá la fecha y las horas de inicio y de fin.')
       return
     }
-    if (valores.horaInicio < '07:00' || valores.horaFin > '23:00') {
+    if (
+      valores.horaInicio < '07:00' ||
+      valores.horaInicio > '23:00' ||
+      valores.horaFin < '07:00' ||
+      valores.horaFin > '23:00'
+    ) {
       onNotify('El horario debe estar entre las 07:00 y las 23:00.')
       return
     }
@@ -169,11 +175,10 @@ export function AsignacionesPanel({ onNotify, query, setQuery }: { onNotify: (v:
         <AcademicSelect label="Asignatura" value={valores.asignaturaId} options={opcionesAsignatura(asignaturas)} onChange={(asignaturaId) => setValores({ ...valores, asignaturaId })} placeholder="Seleccioná una asignatura" searchPlaceholder="Buscar asignatura por nombre o código..." emptyMessage="No hay asignaturas disponibles." loading={cargandoCatalogos} disabled={!cargandoCatalogos && asignaturas.length === 0} />
         <CalendarDatePicker label="Fecha" value={valores.fecha} onChange={(fecha) => setValores({ ...valores, fecha })} />
         <label>Cantidad de estudiantes
-          <input type="number" inputMode="numeric" min="1" max={aulasPorId.get(Number(valores.aulaId))?.capacidadMaxima ?? 100} step="1" value={valores.cantidadEstudiantes} onChange={(e) => setValores({ ...valores, cantidadEstudiantes: e.target.value })} />
-          <small>Según la capacidad del aula seleccionada.</small>
+          <input type="number" inputMode="numeric" min="1" max={capacidadAulaSeleccionada ?? 100} step="1" value={valores.cantidadEstudiantes} placeholder={capacidadAulaSeleccionada ? `Máximo: ${capacidadAulaSeleccionada} estudiantes` : 'Seleccioná un aula'} onChange={(e) => setValores({ ...valores, cantidadEstudiantes: e.target.value })} />
         </label>
-        <label>Hora de inicio<input type="time" min="07:00" max="23:00" step="300" value={valores.horaInicio} onChange={(e) => setValores({ ...valores, horaInicio: e.target.value })} /></label>
-        <label>Hora de fin<input type="time" min="07:00" max="23:00" step="300" value={valores.horaFin} onChange={(e) => setValores({ ...valores, horaFin: e.target.value })} /></label>
+        <label>Hora de inicio<input type="time" value={valores.horaInicio} onClick={(event) => event.currentTarget.showPicker?.()} onChange={(e) => setValores({ ...valores, horaInicio: e.target.value })} /></label>
+        <label>Hora de fin<input type="time" value={valores.horaFin} onClick={(event) => event.currentTarget.showPicker?.()} onChange={(e) => setValores({ ...valores, horaFin: e.target.value })} /></label>
       </div>
       <button className="primary-button" type="button" onClick={crear} disabled={creando || cargandoCatalogos}><Plus size={16} /> {creando ? 'Guardando...' : 'Crear asignación'}</button>
     </article>
@@ -192,7 +197,11 @@ export function AsignacionesPanel({ onNotify, query, setQuery }: { onNotify: (v:
             return <tr key={item.id}>
               <td>{mostrarFecha(item.fecha)}</td>
               <td><strong>{asignatura?.nombre ?? `Asignatura #${item.asignaturaId}`}</strong><small>{asignatura?.codigo}</small></td>
-              <td>{aula?.nombre ?? `Aula #${item.aulaId}`}<small>{aula?.sedeNombre}</small></td>
+              <td>
+                <strong>{aula?.codigo ?? `Aula #${item.aulaId}`}</strong>
+                {aula?.nombre && <> · {aula.nombre}</>}
+                {aula?.sedeNombre && <small>{aula.sedeNombre}</small>}
+              </td>
               <td>{mostrarHora(item.horaInicio)}–{mostrarHora(item.horaFin)}</td>
               <td>{item.cantidadEstudiantes}</td>
             </tr>

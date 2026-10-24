@@ -26,8 +26,7 @@ const periodoVacio = {
   inscripcionDesde: '',
   inscripcionHasta: '',
 }
-const anioActual = new Date().getFullYear()
-const opcionesAnio = Array.from({ length: anioActual - 1999 + 5 }, (_, index) => 2000 + index)
+const opcionesAnio = Array.from({ length: 2100 - 2026 + 1 }, (_, index) => 2026 + index)
 const meses = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',

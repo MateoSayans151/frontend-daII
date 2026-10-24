@@ -172,9 +172,9 @@ export function AcademicSelect({
             <>
               <span className="academic-select__topline">
                 {selected.code && <span className="academic-select__code">{selected.code}</span>}
+                <strong className="academic-select__selected-name">{selected.label}</strong>
                 {selected.badge && <span className={'academic-select__badge academic-select__badge--' + (selected.badgeTone || 'neutral')}>{selected.badge}</span>}
               </span>
-              <strong className="academic-select__selected-name">{selected.label}</strong>
               {selected.description && <small>{selected.description}</small>}
               {selected.meta && <small className="academic-select__meta">{selected.meta}</small>}
             </>
@@ -247,9 +247,9 @@ export function AcademicSelect({
                   <span className="academic-select__option-copy">
                     <span className="academic-select__topline">
                       {option.code && <span className="academic-select__code">{option.code}</span>}
+                      <strong className="academic-select__option-name">{option.label}</strong>
                       {option.badge && <span className={'academic-select__badge academic-select__badge--' + (option.badgeTone || 'neutral')}>{option.badge}</span>}
                     </span>
-                    <strong>{option.label}</strong>
                     {option.description && <small>{option.description}</small>}
                     {option.meta && <small className="academic-select__meta">{option.meta}</small>}
                   </span>

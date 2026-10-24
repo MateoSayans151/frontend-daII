@@ -46,7 +46,7 @@ export const crearAsignacion = createAsyncThunk<Asignacion, CrearAsignacion, { r
     try {
       return await asignacionesService.crear(datos)
     } catch (error) {
-      return rejectWithValue(extraerMensajeError(error))
+      return rejectWithValue(extraerMensajeError(error, 'No se pudo crear la asignación'))
     }
   },
 )
