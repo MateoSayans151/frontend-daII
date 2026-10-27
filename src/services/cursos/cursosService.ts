@@ -17,16 +17,18 @@ export const cursosService = {
       .get<Curso[]>(BASE, { params: periodoId ? { periodoId } : undefined })
       .then((r) => r.data),
   obtener: (id: number) =>
-    authAxios.get<{
-      curso: Curso & { asignatura: { id: number }; periodo: { id: number } }
-      docentes: CursoDetalle['docentes']
-      inscripciones: CursoDetalle['inscripciones']
-    }>(`${BASE}/${id}`).then(({ data }) => ({
-      ...data.curso,
-      asignaturaId: data.curso.asignatura.id,
-      periodoId: data.curso.periodo.id,
-      docentes: data.docentes,
-      inscripciones: data.inscripciones,
+    Promise.all([
+      authAxios.get<{
+        curso: Curso & { asignatura: { id: number }; periodo: { id: number } }
+      }>(`${BASE}/${id}`),
+      authAxios.get<CursoDetalle['docentes']>(`${BASE}/${id}/docentes`),
+      authAxios.get<CursoDetalle['inscripciones']>(`${BASE}/${id}/alumnos`),
+    ]).then(([detalle, docentes, alumnos]) => ({
+      ...detalle.data.curso,
+      asignaturaId: detalle.data.curso.asignatura.id,
+      periodoId: detalle.data.curso.periodo.id,
+      docentes: docentes.data,
+      inscripciones: alumnos.data,
     })),
   crear: (datos: CrearCurso) =>
     authAxios.post<Curso>(BASE, datos).then((r) => r.data),

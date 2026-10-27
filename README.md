@@ -36,9 +36,9 @@ npm.cmd run dev
 | Carreras | `/api/academica/carreras` |
 | Planes | `/api/academica/carreras/{id}/planes` y `/api/academica/planes/{id}/pdf` |
 | Asignaturas | `/api/academica/planes/{id}/asignaturas` |
-| Correlatividades | `/api/academica/asignaturas/{id}/correlatividades` |
+| Correlatividades | `/api/academica/asignaturas/{id}/correlatividades`; devuelve condiciones agrupadas por tipo y cada materia correlativa con ID, código y nombre |
 | Sedes y aulas | `/api/planificacion/sedes` y rutas de aulas por sede |
-| Cursos | `/api/planificacion/cursos` y rutas anidadas de horario, docentes e inscripciones |
+| Cursos | `/api/planificacion/cursos`, horario y consultas `/cursos/{id}/docentes` y `/cursos/{id}/alumnos` |
 | Asignaciones | `/api/planificacion/asignaciones` |
 | Agenda | `/api/planificacion/aulas/{id}/agenda?desde=&hasta=` |
 | Períodos | `/api/planificacion/periodos` |
@@ -47,6 +47,13 @@ npm.cmd run dev
 
 La agenda selecciona un aula, consulta un rango de 42 días para cubrir el mes visible y
 muestra las reservas del día elegido.
+
+En la edición de un curso, docentes y alumnos son secciones de consulta. El frontend
+obtiene ambas listas mediante sus endpoints `GET` y no muestra formularios de alta,
+inscripción ni modificación de resultados en esa pantalla.
+
+La pantalla de correlatividades cancela las consultas anteriores al cambiar de
+asignatura, ignora respuestas tardías y no ofrece materias que ya están configuradas.
 
 ## Estructura
 

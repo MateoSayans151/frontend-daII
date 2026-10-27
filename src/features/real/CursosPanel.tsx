@@ -9,17 +9,14 @@ import { Toolbar } from '../../components/ui/Toolbar'
 import { extraerMensajeError } from '../../services/api/erroresApi'
 import { catalogosService, type AulaCatalogo } from '../../services/catalogos/catalogosService'
 import {
-  asignarDocenteCurso,
-  actualizarInscripcionCurso,
   actualizarEstadoCurso,
   actualizarHorarioCurso,
   crearCurso,
-  inscribirAlumnoCurso,
   limpiarCursoSeleccionado,
   listarCursos,
   obtenerCurso,
 } from '../../services/cursos/cursosSlice'
-import type { ActualizarInscripcionCurso, Asignatura, CursoDetalle, CrearCurso, PeriodoAcademico, Sede } from '../../types/api'
+import type { Asignatura, CursoDetalle, CrearCurso, PeriodoAcademico, Sede } from '../../types/api'
 import {
   CODIGO_ACADEMICO_MENSAJE,
   esCodigoAcademicoValido,
@@ -42,15 +39,6 @@ const cursoVacio: CrearCurso = {
   aulaId: 0,
 }
 
-const docenteVacio = { docenteId: '', rol: '' }
-const inscripcionVacia = { alumnoId: '' }
-const resultadoVacio: ActualizarInscripcionCurso & { alumnoId: string } = {
-  alumnoId: '',
-  estado: '',
-  notaFinal: null,
-  fechaResultado: '',
-}
-
 const diasSemana = [
   { value: 'MONDAY', label: 'Lunes' },
   { value: 'TUESDAY', label: 'Martes' },
@@ -71,22 +59,6 @@ const estadosCurso = [
   { value: 'EN_CURSO', label: 'En curso' },
   { value: 'FINALIZADO', label: 'Finalizado' },
   { value: 'CANCELADO', label: 'Cancelado' },
-]
-
-const rolesDocente = [
-  { value: 'TITULAR', label: 'Titular' },
-  { value: 'ADJUNTO', label: 'Adjunto' },
-  { value: 'AUXILIAR', label: 'Auxiliar' },
-]
-
-const estadosInscripcion = [
-  { value: 'INSCRIPTO', label: 'Inscripto' },
-  { value: 'CURSANDO', label: 'Cursando' },
-  { value: 'BAJA', label: 'Baja' },
-  { value: 'REGULAR', label: 'Regular' },
-  { value: 'LIBRE', label: 'Libre' },
-  { value: 'APROBADO', label: 'Aprobado' },
-  { value: 'DESAPROBADO', label: 'Desaprobado' },
 ]
 
 function fechaBreve(fecha: string) {
@@ -420,9 +392,6 @@ function DetalleCurso({
     horaInicio: curso.horaInicio?.slice(0, 5) ?? '',
     horaFin: curso.horaFin?.slice(0, 5) ?? '',
   })
-  const [docente, setDocente] = useState(docenteVacio)
-  const [inscripcion, setInscripcion] = useState(inscripcionVacia)
-  const [resultado, setResultado] = useState(resultadoVacio)
   const asignatura = catalogos.asignaturas.find((item) => item.id === curso.asignaturaId)
   const periodo = catalogos.periodos.find((item) => item.id === curso.periodoId)
   const sede = catalogos.sedes.find((item) => item.id === curso.sedeId)
@@ -458,67 +427,6 @@ function DetalleCurso({
       onNotify('Horario del curso actualizado')
       onRefresh()
     }
-  }
-
-  const agregarDocente = async () => {
-    if (!docente.docenteId.trim() || !docente.rol.trim()) {
-      onNotify('Completá el ID del docente y su rol.')
-      return
-    }
-    const action = await dispatch(asignarDocenteCurso({ id: curso.id, datos: docente }))
-    if (asignarDocenteCurso.fulfilled.match(action)) {
-      setDocente(docenteVacio)
-      onNotify('Docente asignado correctamente')
-      onRefresh()
-    }
-  }
-
-  const inscribir = async () => {
-    if (!inscripcion.alumnoId.trim()) {
-      onNotify('Completá el ID del alumno.')
-      return
-    }
-    const action = await dispatch(inscribirAlumnoCurso({
-      id: curso.id,
-      datos: { alumnoId: inscripcion.alumnoId.trim() },
-    }))
-    if (inscribirAlumnoCurso.fulfilled.match(action)) {
-      setInscripcion(inscripcionVacia)
-      onNotify('Inscripción registrada correctamente')
-      onRefresh()
-    }
-  }
-
-  const guardarResultado = async () => {
-    if (!resultado.alumnoId.trim() || !resultado.estado.trim()) {
-      onNotify('Completá el alumno y el estado del resultado.')
-      return
-    }
-    const action = await dispatch(actualizarInscripcionCurso({
-      id: curso.id,
-      alumnoId: resultado.alumnoId.trim(),
-      datos: {
-        estado: resultado.estado,
-        notaFinal: resultado.notaFinal,
-        fechaResultado: resultado.fechaResultado || null,
-      },
-    }))
-    if (actualizarInscripcionCurso.fulfilled.match(action)) {
-      setResultado(resultadoVacio)
-      onNotify('Resultado actualizado correctamente')
-      onRefresh()
-    }
-  }
-
-  const cargarResultado = (alumnoId: string) => {
-    const alumno = curso.inscripciones.find((item) => item.alumnoId === alumnoId)
-    if (!alumno) return
-    setResultado({
-      alumnoId: alumno.alumnoId,
-      estado: alumno.estado,
-      notaFinal: alumno.notaFinal,
-      fechaResultado: alumno.fechaResultado ?? '',
-    })
   }
 
   return (
@@ -591,61 +499,22 @@ function DetalleCurso({
           </table>
           {curso.docentes.length === 0 && <p className="muted-copy">Todavía no hay docentes asignados.</p>}
         </div>
-        <div className="form-grid">
-          <label>ID externo del docente<input value={docente.docenteId} onChange={(event) => setDocente({ ...docente, docenteId: event.target.value })} aria-describedby="docente-id-help" /></label>
-          <label>Rol
-            <select value={docente.rol} onChange={(event) => setDocente({ ...docente, rol: event.target.value })}>
-              <option value="">Seleccioná un rol...</option>
-              {rolesDocente.map((opcion) => <option key={opcion.value} value={opcion.value}>{opcion.label}</option>)}
-            </select>
-          </label>
-        </div>
-        <p className="course-detail__field-note" id="docente-id-help">El backend recibe un identificador externo de docente; todavía no expone un catálogo para elegir por nombre.</p>
-        <button className="secondary-button" type="button" onClick={agregarDocente}><Plus size={16} /> Asignar docente</button>
       </article>
 
       <article className="panel course-detail__section">
-        <h2>Inscripciones y resultados</h2>
+        <h2>Alumnos inscriptos</h2>
         <div className="table-wrap">
           <table>
-            <thead><tr><th>ID externo de alumno</th><th>Fecha</th><th>Estado</th><th>Nota final</th><th>Fecha de resultado</th><th /></tr></thead>
+            <thead><tr><th>ID externo de alumno</th><th>Fecha</th><th>Estado</th><th>Nota final</th><th>Fecha de resultado</th></tr></thead>
             <tbody>{curso.inscripciones.map((item) => (
               <tr key={item.id}>
                 <td>{item.alumnoId}</td><td>{item.fechaInscripcion}</td><td>{item.estado}</td>
                 <td>{item.notaFinal ?? '—'}</td><td>{item.fechaResultado ?? '—'}</td>
-                <td><button className="text-button" type="button" onClick={() => cargarResultado(item.alumnoId)}>Cargar resultado</button></td>
               </tr>
             ))}</tbody>
           </table>
           {curso.inscripciones.length === 0 && <p className="muted-copy">No hay inscripciones registradas.</p>}
         </div>
-        <h3>Inscribir alumno</h3>
-        <div className="form-grid">
-          <label>ID externo del alumno<input value={inscripcion.alumnoId} onChange={(event) => setInscripcion({ ...inscripcion, alumnoId: event.target.value })} aria-describedby="alumno-id-help" /></label>
-        </div>
-        <p className="course-detail__field-note" id="alumno-id-help">El backend recibe un identificador externo; todavía no hay un catálogo de estudiantes para seleccionar.</p>
-        <button className="secondary-button" type="button" onClick={inscribir}><Plus size={16} /> Inscribir</button>
-        <h3>Actualizar resultado</h3>
-        <div className="form-grid">
-          <label>Alumno inscrito
-            <select value={resultado.alumnoId} onChange={(event) => {
-              const seleccionado = curso.inscripciones.find((item) => item.alumnoId === event.target.value)
-              setResultado(seleccionado ? { alumnoId: seleccionado.alumnoId, estado: seleccionado.estado, notaFinal: seleccionado.notaFinal, fechaResultado: seleccionado.fechaResultado ?? '' } : resultadoVacio)
-            }} disabled={curso.inscripciones.length === 0}>
-              <option value="">{curso.inscripciones.length ? 'Seleccioná un alumno inscrito...' : 'No hay alumnos inscriptos'}</option>
-              {curso.inscripciones.map((item) => <option key={item.id} value={item.alumnoId}>ID externo: {item.alumnoId}</option>)}
-            </select>
-          </label>
-          <label>Estado
-            <select value={resultado.estado} onChange={(event) => setResultado({ ...resultado, estado: event.target.value })}>
-              <option value="">Seleccioná un estado...</option>
-              {estadosInscripcion.map((opcion) => <option key={opcion.value} value={opcion.value}>{opcion.label}</option>)}
-            </select>
-          </label>
-          <label>Nota final<input type="number" inputMode="decimal" min="0" max="10" step="0.01" value={resultado.notaFinal ?? ''} onChange={(event) => setResultado({ ...resultado, notaFinal: event.target.value === '' ? null : Number(event.target.value) })} /></label>
-          <CalendarDatePicker label="Fecha de resultado" value={resultado.fechaResultado ?? ''} onChange={(fechaResultado) => setResultado({ ...resultado, fechaResultado })} />
-        </div>
-        <button className="secondary-button" type="button" onClick={guardarResultado} disabled={!resultado.alumnoId}>Guardar resultado</button>
       </article>
 
     </div>
