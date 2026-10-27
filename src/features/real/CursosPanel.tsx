@@ -16,6 +16,7 @@ import {
   listarCursos,
   obtenerCurso,
 } from '../../services/cursos/cursosSlice'
+import { regularidadService } from '../../services/regularidad/regularidadService'
 import type { Asignatura, CursoDetalle, CrearCurso, PeriodoAcademico, Sede } from '../../types/api'
 import {
   CODIGO_ACADEMICO_MENSAJE,
@@ -37,6 +38,8 @@ const cursoVacio: CrearCurso = {
   horaFin: '',
   diaSemana: '',
   aulaId: 0,
+  asistenciaMinima: 75,
+  promedioMinimo: 6,
 }
 
 const diasSemana = [
@@ -170,7 +173,13 @@ export function CursosPanel({ query, setQuery, onNotify }: { query: string; setQ
       !Number.isInteger(valores.aulaId) ||
       valores.aulaId <= 0 ||
       !valores.horaInicio ||
-      !valores.horaFin
+      !valores.horaFin ||
+      !Number.isFinite(valores.asistenciaMinima) ||
+      valores.asistenciaMinima < 0 ||
+      valores.asistenciaMinima > 100 ||
+      !Number.isFinite(valores.promedioMinimo) ||
+      valores.promedioMinimo < 0 ||
+      valores.promedioMinimo > 10
     ) {
       onNotify('Completá todos los campos del curso con valores válidos.')
       return
@@ -325,6 +334,16 @@ export function CursosPanel({ query, setQuery, onNotify }: { query: string; setQ
               <input type="time" value={valores.horaFin} onChange={(event) => setValores({ ...valores, horaFin: event.target.value })} />
             </label>
           </div>
+          <h3>Condiciones para regularizar</h3>
+          <p className="muted-copy">Estos mínimos quedarán vinculados al curso y se podrán editar más adelante.</p>
+          <div className="form-grid">
+            <label>Asistencia mínima (%)
+              <input type="number" min="0" max="100" step="0.01" value={valores.asistenciaMinima} onChange={(event) => setValores({ ...valores, asistenciaMinima: Number(event.target.value) })} />
+            </label>
+            <label>Promedio mínimo
+              <input type="number" min="0" max="10" step="0.01" value={valores.promedioMinimo} onChange={(event) => setValores({ ...valores, promedioMinimo: Number(event.target.value) })} />
+            </label>
+          </div>
           <button className="primary-button" type="button" onClick={crear} disabled={cargando || cargandoCatalogos}><Check size={16} /> {cargando ? 'Guardando...' : 'Guardar curso'}</button>
         </article>
       )}
@@ -392,6 +411,11 @@ function DetalleCurso({
     horaInicio: curso.horaInicio?.slice(0, 5) ?? '',
     horaFin: curso.horaFin?.slice(0, 5) ?? '',
   })
+  const [regularidad, setRegularidad] = useState({
+    asistenciaMinima: curso.regularidad.asistenciaMinima,
+    promedioMinimo: curso.regularidad.promedioMinimo,
+  })
+  const [guardandoRegularidad, setGuardandoRegularidad] = useState(false)
   const asignatura = catalogos.asignaturas.find((item) => item.id === curso.asignaturaId)
   const periodo = catalogos.periodos.find((item) => item.id === curso.periodoId)
   const sede = catalogos.sedes.find((item) => item.id === curso.sedeId)
@@ -426,6 +450,24 @@ function DetalleCurso({
     if (actualizarHorarioCurso.fulfilled.match(action)) {
       onNotify('Horario del curso actualizado')
       onRefresh()
+    }
+  }
+
+  const guardarRegularidad = async () => {
+    if (!Number.isFinite(regularidad.asistenciaMinima) || regularidad.asistenciaMinima < 0 || regularidad.asistenciaMinima > 100 ||
+        !Number.isFinite(regularidad.promedioMinimo) || regularidad.promedioMinimo < 0 || regularidad.promedioMinimo > 10) {
+      onNotify('La asistencia debe estar entre 0 y 100, y el promedio entre 0 y 10.')
+      return
+    }
+    setGuardandoRegularidad(true)
+    try {
+      await regularidadService.actualizar(curso.id, regularidad)
+      onNotify('Condiciones de regularidad actualizadas')
+      onRefresh()
+    } catch (regularidadError) {
+      onNotify(extraerMensajeError(regularidadError, 'No se pudieron actualizar las condiciones de regularidad'))
+    } finally {
+      setGuardandoRegularidad(false)
     }
   }
 
@@ -489,6 +531,21 @@ function DetalleCurso({
         </div>
         {errorAulas && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {errorAulas}</div>}
         <button className="secondary-button" type="button" onClick={guardarHorario} disabled={cargandoAulas}>Guardar horario</button>
+      </article>
+      <article className="panel course-detail__section">
+        <h2>Condiciones para regularizar</h2>
+        <p className="muted-copy">Definí los mínimos que verá el equipo al consultar este curso.</p>
+        <div className="form-grid">
+          <label>Asistencia mínima (%)
+            <input type="number" min="0" max="100" step="0.01" value={regularidad.asistenciaMinima} onChange={(event) => setRegularidad({ ...regularidad, asistenciaMinima: Number(event.target.value) })} />
+          </label>
+          <label>Promedio mínimo
+            <input type="number" min="0" max="10" step="0.01" value={regularidad.promedioMinimo} onChange={(event) => setRegularidad({ ...regularidad, promedioMinimo: Number(event.target.value) })} />
+          </label>
+        </div>
+        <button className="secondary-button" type="button" onClick={guardarRegularidad} disabled={guardandoRegularidad}>
+          {guardandoRegularidad ? 'Guardando…' : 'Guardar condiciones'}
+        </button>
       </article>
       <article className="panel course-detail__section">
         <h2>Docentes</h2>

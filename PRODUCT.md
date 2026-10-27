@@ -32,7 +32,7 @@ El portal se usa desde computadoras del equipo administrativo. Las pantallas tra
 - Crear sedes y aulas, registrar capacidades y consultar agendas.
 - Asignar aulas a cursos evitando superposiciones horarias.
 - Definir fechas de inicio y fin de cuatrimestres y turnos de exámenes finales.
-- Validar regularidad a partir de asistencia mínima y promedio mínimo.
+- Configurar y consultar por curso la asistencia mínima y el promedio mínimo para regularizar, sin solicitar datos de alumnos.
 - La API local usa una sesión HTTP con cookie `JSESSIONID` y restringe la administración a roles académicos.
 - La UI debe conservar los textos en español y mostrar claramente errores, estados vacíos y cargas provenientes de la API.
 

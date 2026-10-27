@@ -38,12 +38,12 @@ npm.cmd run dev
 | Asignaturas | `/api/academica/planes/{id}/asignaturas` |
 | Correlatividades | `/api/academica/asignaturas/{id}/correlatividades`; devuelve condiciones agrupadas por tipo y cada materia correlativa con ID, código y nombre |
 | Sedes y aulas | `/api/planificacion/sedes` y rutas de aulas por sede |
-| Cursos | `/api/planificacion/cursos`, horario y consultas `/cursos/{id}/docentes` y `/cursos/{id}/alumnos` |
+| Cursos | `/api/planificacion/cursos`, horario, condiciones de regularidad y consultas `/cursos/{id}/docentes` y `/cursos/{id}/alumnos` |
 | Asignaciones | `/api/planificacion/asignaciones` |
 | Agenda | `/api/planificacion/aulas/{id}/agenda?desde=&hasta=` |
 | Períodos | `/api/planificacion/periodos` |
 | Turnos | `/api/planificacion/turnos-examen` |
-| Regularidad | `/api/regularidad/validar` |
+| Regularidad | `GET /api/regularidad/cursos/{cursoId}` y correlativas de la asignatura |
 
 La agenda selecciona un aula, consulta un rango de 42 días para cubrir el mes visible y
 muestra las reservas del día elegido.
@@ -51,6 +51,11 @@ muestra las reservas del día elegido.
 En la edición de un curso, docentes y alumnos son secciones de consulta. El frontend
 obtiene ambas listas mediante sus endpoints `GET` y no muestra formularios de alta,
 inscripción ni modificación de resultados en esa pantalla.
+
+La creación del curso exige `asistenciaMinima` (0–100) y `promedioMinimo` (0–10).
+Ambos campos pueden modificarse desde la administración del curso. La pantalla de
+Regularidad sólo solicita elegir el curso: no pide un ID de alumno ni valores obtenidos,
+y combina los mínimos persistidos con las correlativas de la asignatura.
 
 La pantalla de correlatividades cancela las consultas anteriores al cambiar de
 asignatura, ignora respuestas tardías y no ofrece materias que ya están configuradas.

@@ -1,7 +1,11 @@
 import { authAxios } from '../api/authAxios'
-import type { ResultadoRegularidad, ValidarRegularidad } from '../../types/api'
+import type { CondicionesRegularidadCurso, GuardarCondicionesRegularidad } from '../../types/api'
+
+const BASE = '/api/regularidad/cursos'
 
 export const regularidadService = {
-  validar: (datos: ValidarRegularidad) =>
-    authAxios.post<ResultadoRegularidad>('/api/regularidad/validar', datos).then((r) => r.data),
+  consultar: (cursoId: number) =>
+    authAxios.get<CondicionesRegularidadCurso>(`${BASE}/${cursoId}`).then((r) => r.data),
+  actualizar: (cursoId: number, datos: GuardarCondicionesRegularidad) =>
+    authAxios.put<CondicionesRegularidadCurso>(`${BASE}/${cursoId}`, datos).then((r) => r.data),
 }

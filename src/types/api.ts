@@ -165,6 +165,8 @@ export interface CrearCurso {
   horaFin: string
   diaSemana: string
   aulaId: number
+  asistenciaMinima: number
+  promedioMinimo: number
 }
 export interface ActualizarHorarioCurso {
   aulaId: number
@@ -205,6 +207,7 @@ export interface ActualizarInscripcionCurso {
 export interface CursoDetalle extends Curso {
   docentes: DocenteCurso[]
   inscripciones: InscripcionCurso[]
+  regularidad: CondicionesRegularidadCurso
 }
 
 export interface PeriodoAcademico {
@@ -241,24 +244,14 @@ export interface CrearTurnoExamen {
   inscripcionHasta: string
 }
 
-export interface ValidarRegularidad {
-  alumnoId: string
-  cursoId: number
-  asistencia: number
-  promedio: number
+export interface GuardarCondicionesRegularidad {
   asistenciaMinima: number
   promedioMinimo: number
 }
-export interface ResultadoRegularidad {
-  regular: boolean
-  habilitadoParaFinal: boolean
-  motivos: string[]
-  alumnoId: string
+export interface CondicionesRegularidadCurso extends GuardarCondicionesRegularidad {
+  id: number
   cursoId: number
-  cursoCodigo: string
-  asignaturaId: number
-  asignaturaCodigo: string
-  asignaturaNombre: string
+  codigo: string
 }
 
 export type Permiso = string

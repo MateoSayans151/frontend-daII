@@ -15,7 +15,7 @@ const copy: Record<Screen, [string, string]> = {
   Agenda: ['Agenda', 'Consultá la ocupación de cada aula por fecha.'],
   Períodos: ['Períodos académicos', 'Definí las fechas que ordenan cada ciclo lectivo.'],
   'Turnos de examen': ['Turnos de examen', 'Publicá las fechas y aulas para los finales.'],
-  Regularidad: ['Validación de regularidad', 'Comprobá si una persona cumple las condiciones para rendir un final.'],
+  Regularidad: ['Condiciones de regularidad', 'Consultá qué exige cada curso para regularizar la cursada.'],
 }
 
 export function PageHeading({ screen, onCreate }: PageHeadingProps) {

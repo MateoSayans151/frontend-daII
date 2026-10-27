@@ -5,6 +5,50 @@
   margin-top: 24px;
 }
 
+.regularity-context-fields--single { grid-template-columns: 1fr; }
+
+.regularity-help {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 13px;
+  border: 1px solid #d9e4f2;
+  border-radius: 9px;
+  background: #f7faff;
+  color: #315986;
+}
+
+.regularity-help span { display: grid; gap: 4px; }
+.regularity-help strong { font-size: 12px; }
+.regularity-help small { color: #71839c; font-size: 11px; line-height: 1.5; }
+.regularity-course-name { margin: 0 0 14px; color: #5e7391; }
+
+.regularity-thresholds {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+  margin: 5px 0 18px;
+}
+
+.regularity-thresholds div {
+  padding: 14px;
+  border: 1px solid #d9e4f2;
+  border-radius: 9px;
+  background: #fff;
+}
+
+.regularity-thresholds dt { color: #71839c; font-size: 10px; text-transform: uppercase; }
+.regularity-thresholds dd { margin: 5px 0 0; color: #244d7c; font-size: 24px; font-weight: 700; }
+.regularity-correlatives { width: 100%; text-align: left; }
+.regularity-correlatives h3 { margin: 0 0 10px; color: #274b75; font-size: 13px; }
+.regularity-correlatives > div { margin-top: 10px; }
+.regularity-correlatives strong { color: #536b89; font-size: 11px; }
+.regularity-correlatives ul { margin: 6px 0 0; padding-left: 18px; }
+.regularity-correlatives p,
+.regularity-correlatives li { color: #71839c; font-size: 11px; line-height: 1.55; }
+
 .regularity-result-context {
   display: flex;
   align-items: center;
@@ -34,6 +78,7 @@
 
 @media (max-width: 760px) {
   .regularity-context-fields { grid-template-columns: 1fr; }
+  .regularity-thresholds { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {

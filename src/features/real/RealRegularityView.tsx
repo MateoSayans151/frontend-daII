@@ -1,13 +1,14 @@
-import { Check, CheckCircle, ClipboardText, Student, WarningCircle } from '@phosphor-icons/react'
-import { useEffect, useMemo, useState } from 'react'
+import { BookOpenText, CheckCircle, ClipboardText, WarningCircle } from '@phosphor-icons/react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../../app/hooks'
 import { AcademicSelect, type AcademicSelectOption } from '../../components/ui/AcademicSelect'
 import { SurfaceSkeleton } from '../../components/ui/SurfaceSkeleton'
 import { extraerMensajeError } from '../../services/api/erroresApi'
 import { catalogosService } from '../../services/catalogos/catalogosService'
+import { correlatividadesService } from '../../services/correlatividades/correlatividadesService'
 import { cursosService } from '../../services/cursos/cursosService'
-import { limpiarResultadoRegularidad, validarRegularidad } from '../../services/regularidad/regularidadSlice'
-import type { Asignatura, Curso, CursoDetalle } from '../../types/api'
+import { consultarRegularidad, limpiarResultadoRegularidad } from '../../services/regularidad/regularidadSlice'
+import type { Asignatura, CondicionCorrelatividad, Curso } from '../../types/api'
 import './RealRegularityView.css'
 
 export function RealRegularityView({ onNotify }: { onNotify: (value: string) => void }) {
@@ -15,17 +16,13 @@ export function RealRegularityView({ onNotify }: { onNotify: (value: string) => 
   const { resultado, cargando, error } = useAppSelector((state) => state.regularidad)
   const [cursos, setCursos] = useState<Curso[]>([])
   const [asignaturas, setAsignaturas] = useState<Asignatura[]>([])
-  const [cursoDetalle, setCursoDetalle] = useState<CursoDetalle | null>(null)
   const [cursoId, setCursoId] = useState('')
-  const [alumnoId, setAlumnoId] = useState('')
-  const [asistencia, setAsistencia] = useState('80')
-  const [promedio, setPromedio] = useState('7')
-  const [asistenciaMinima, setAsistenciaMinima] = useState('75')
-  const [promedioMinimo, setPromedioMinimo] = useState('6')
+  const [correlativas, setCorrelativas] = useState<CondicionCorrelatividad[]>([])
   const [cargandoCatalogos, setCargandoCatalogos] = useState(true)
-  const [cargandoInscripciones, setCargandoInscripciones] = useState(false)
+  const [cargandoCorrelativas, setCargandoCorrelativas] = useState(false)
   const [errorCatalogos, setErrorCatalogos] = useState('')
-  const [errorInscripciones, setErrorInscripciones] = useState('')
+  const [errorCorrelativas, setErrorCorrelativas] = useState('')
+  const solicitudCorrelativas = useRef(0)
 
   useEffect(() => {
     let activo = true
@@ -44,31 +41,13 @@ export function RealRegularityView({ onNotify }: { onNotify: (value: string) => 
     return () => { activo = false }
   }, [])
 
-  useEffect(() => {
-    if (!cursoId) return
-    let activo = true
-    cursosService.obtener(Number(cursoId))
-      .then((detalle) => {
-        if (activo) setCursoDetalle(detalle)
-      })
-      .catch((detalleError) => {
-        if (activo) {
-          setCursoDetalle(null)
-          setErrorInscripciones(extraerMensajeError(detalleError, 'No se pudieron cargar los alumnos del curso'))
-        }
-      })
-      .finally(() => {
-        if (activo) setCargandoInscripciones(false)
-      })
-    return () => { activo = false }
-  }, [cursoId])
-
   useEffect(() => () => { dispatch(limpiarResultadoRegularidad()) }, [dispatch])
 
   const asignaturasPorId = useMemo(
     () => new Map(asignaturas.map((asignatura) => [asignatura.id, asignatura])),
     [asignaturas],
   )
+  const cursosPorId = useMemo(() => new Map(cursos.map((curso) => [curso.id, curso])), [cursos])
   const opcionesCurso: AcademicSelectOption[] = cursos.map((curso) => {
     const asignatura = asignaturasPorId.get(curso.asignaturaId)
     return {
@@ -79,95 +58,95 @@ export function RealRegularityView({ onNotify }: { onNotify: (value: string) => 
       meta: curso.estado,
     }
   })
-  const inscripcionesActivas = cursoDetalle?.inscripciones.filter((item) => item.estado !== 'BAJA') ?? []
-  const opcionesAlumno: AcademicSelectOption[] = inscripcionesActivas.map((inscripcion) => ({
-    value: inscripcion.alumnoId,
-    code: inscripcion.alumnoId,
-    label: `Alumno ${inscripcion.alumnoId}`,
-    description: `Estado en el curso: ${inscripcion.estado}`,
-  }))
 
-  const limpiarResultado = () => dispatch(limpiarResultadoRegularidad())
-  const seleccionarCurso = (value: string) => {
+  const seleccionarCurso = async (value: string) => {
+    const solicitudActual = ++solicitudCorrelativas.current
     setCursoId(value)
-    setAlumnoId('')
-    setCursoDetalle(null)
-    setErrorInscripciones('')
-    setCargandoInscripciones(Boolean(value))
-    limpiarResultado()
-  }
-  const cambiarNumero = (setter: (value: string) => void, value: string) => {
-    setter(value)
-    limpiarResultado()
-  }
+    setCorrelativas([])
+    setErrorCorrelativas('')
+    setCargandoCorrelativas(Boolean(value))
+    dispatch(limpiarResultadoRegularidad())
+    if (!value) return
 
-  const validar = async () => {
-    if (!cursoId || !alumnoId) {
-      onNotify('Seleccioná un curso y un alumno inscripto.')
+    const curso = cursosPorId.get(Number(value))
+    if (!curso) {
+      setCargandoCorrelativas(false)
+      onNotify('El curso seleccionado ya no está disponible.')
       return
     }
-    const numeros = [asistencia, promedio, asistenciaMinima, promedioMinimo].map(Number)
-    if (numeros.some((valor) => !Number.isFinite(valor))) {
-      onNotify('Completá todos los valores de regularidad.')
-      return
+
+    const consulta = dispatch(consultarRegularidad(curso.id))
+    try {
+      const respuesta = await correlatividadesService.listar(curso.asignaturaId)
+      if (solicitudCorrelativas.current === solicitudActual) setCorrelativas(respuesta.condiciones)
+    } catch (correlativasError) {
+      if (solicitudCorrelativas.current === solicitudActual) {
+        setErrorCorrelativas(extraerMensajeError(correlativasError, 'No se pudieron cargar las correlativas'))
+      }
+    } finally {
+      if (solicitudCorrelativas.current === solicitudActual) setCargandoCorrelativas(false)
     }
-    const resultadoAccion = await dispatch(validarRegularidad({
-      alumnoId,
-      cursoId: Number(cursoId),
-      asistencia: numeros[0],
-      promedio: numeros[1],
-      asistenciaMinima: numeros[2],
-      promedioMinimo: numeros[3],
-    }))
-    if (validarRegularidad.fulfilled.match(resultadoAccion)) onNotify('Validación completada')
+    await consulta
   }
 
-  const tonoResultado = resultado
-    ? resultado.habilitadoParaFinal ? 'approved' : resultado.regular ? 'conditional' : 'rejected'
-    : ''
-  const tituloResultado = resultado
-    ? resultado.habilitadoParaFinal
-      ? 'Habilitado para rendir'
-      : resultado.regular
-        ? 'Regular, con correlativas pendientes'
-        : 'No alcanza la regularidad'
-    : 'Esperando validación'
+  const cursoSeleccionado = cursosPorId.get(Number(cursoId))
+  const asignaturaSeleccionada = cursoSeleccionado
+    ? asignaturasPorId.get(cursoSeleccionado.asignaturaId)
+    : undefined
+  const cargandoCondiciones = cargando || cargandoCorrelativas
 
   return <div className="regularity-layout">
     <article className="panel validation-card">
-      <div className="form-kicker">MOTOR DE VALIDACIÓN</div>
-      <h2>¿Puede rendir el final?</h2>
-      <p>Elegí el curso y el alumno. Se comprobarán su inscripción, la materia y las correlativas aprobadas.</p>
+      <div className="form-kicker">CONDICIONES DE CURSADA</div>
+      <h2>¿Qué exige el curso para regularizar?</h2>
+      <p>Elegí un curso para consultar sus condiciones. No se solicitan datos de alumnos ni se evalúan inscripciones individuales.</p>
       {errorCatalogos && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {errorCatalogos}</div>}
-      {errorInscripciones && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {errorInscripciones}</div>}
       {error && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {error}</div>}
+      {errorCorrelativas && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {errorCorrelativas}</div>}
       {cargandoCatalogos ? <SurfaceSkeleton label="cursos y materias" rows={2} /> : (
-        <div className="regularity-context-fields">
-          <AcademicSelect label="Curso y materia" value={cursoId} options={opcionesCurso} onChange={seleccionarCurso} placeholder="Seleccioná un curso" searchPlaceholder="Buscar por curso o materia..." emptyMessage="No hay cursos disponibles." clearable />
-          <AcademicSelect label="Alumno inscripto" value={alumnoId} options={opcionesAlumno} onChange={(value) => { setAlumnoId(value); limpiarResultado() }} placeholder="Seleccioná un alumno" searchPlaceholder="Buscar por ID de alumno..." emptyMessage={cursoId ? 'El curso no tiene alumnos inscriptos activos.' : 'Primero seleccioná un curso.'} loading={cargandoInscripciones} disabled={!cursoId || cargandoInscripciones} clearable />
+        <div className="regularity-context-fields regularity-context-fields--single">
+          <AcademicSelect
+            label="Curso y materia"
+            value={cursoId}
+            options={opcionesCurso}
+            onChange={seleccionarCurso}
+            placeholder="Seleccioná un curso"
+            searchPlaceholder="Buscar por curso o materia..."
+            emptyMessage="No hay cursos disponibles."
+            clearable
+          />
         </div>
       )}
-      <div className="form-grid">
-        <label>Asistencia registrada (%)<input value={asistencia} onChange={(e) => cambiarNumero(setAsistencia, e.target.value)} type="number" min="0" max="100" /></label>
-        <label>Promedio de cursada<input value={promedio} onChange={(e) => cambiarNumero(setPromedio, e.target.value)} type="number" min="0" max="10" step=".1" /></label>
-        <label>Asistencia mínima exigida (%)<input value={asistenciaMinima} onChange={(e) => cambiarNumero(setAsistenciaMinima, e.target.value)} type="number" min="0" max="100" /></label>
-        <label>Promedio mínimo exigido<input value={promedioMinimo} onChange={(e) => cambiarNumero(setPromedioMinimo, e.target.value)} type="number" min="0" max="10" step=".1" /></label>
+      <div className="regularity-help">
+        <BookOpenText size={20} aria-hidden="true" />
+        <span><strong>Fuente de información</strong><small>Los mínimos se guardan por curso. Las correlativas se leen de la configuración de la asignatura.</small></span>
       </div>
-      <button className="primary-button" onClick={validar} disabled={cargando || cargandoCatalogos || cargandoInscripciones}><Check size={17} /> {cargando ? 'Validando...' : 'Validar regularidad'}</button>
     </article>
-    <article className={`panel result-card ${tonoResultado}`} aria-live="polite">
-      <div className="result-icon">{resultado ? (resultado.habilitadoParaFinal ? <CheckCircle size={28} weight="fill" /> : <WarningCircle size={28} weight="fill" />) : <ClipboardText size={28} />}</div>
-      <span className="result-label">RESULTADO</span>
-      <h2>{tituloResultado}</h2>
-      {resultado ? <>
-        <div className="regularity-result-context">
-          <Student size={18} aria-hidden="true" />
-          <span><strong>{resultado.alumnoId}</strong><small>{resultado.cursoCodigo} · {resultado.asignaturaCodigo} · {resultado.asignaturaNombre}</small></span>
+
+    <article className={`panel result-card ${resultado ? 'approved' : ''}`} aria-live="polite" aria-busy={cargandoCondiciones}>
+      <div className="result-icon">{resultado ? <CheckCircle size={28} weight="fill" /> : <ClipboardText size={28} />}</div>
+      <span className="result-label">CONDICIONES</span>
+      <h2>{resultado ? resultado.codigo : cursoId ? 'Cargando condiciones…' : 'Seleccioná un curso'}</h2>
+      {cargandoCondiciones && <SurfaceSkeleton label="las condiciones de regularidad" rows={2} />}
+      {!cargandoCondiciones && resultado && <>
+        <p className="regularity-course-name">
+          {asignaturaSeleccionada ? `${asignaturaSeleccionada.codigo} · ${asignaturaSeleccionada.nombre}` : 'Asignatura no disponible'}
+        </p>
+        <dl className="regularity-thresholds">
+          <div><dt>Asistencia mínima</dt><dd>{resultado.asistenciaMinima}%</dd></div>
+          <div><dt>Promedio mínimo</dt><dd>{resultado.promedioMinimo}</dd></div>
+        </dl>
+        <div className="regularity-correlatives">
+          <h3>Correlativas requeridas</h3>
+          {correlativas.length === 0 ? <p>La asignatura no tiene correlativas configuradas.</p> : correlativas.map((grupo) => (
+            <div key={grupo.tipo}>
+              <strong>{grupo.tipo === 'APROBADA' ? 'Aprobadas' : 'Regularizadas'}</strong>
+              <ul>{grupo.materiasCorrelativas.map((materia) => <li key={materia.id}>{materia.codigo} · {materia.nombre}</li>)}</ul>
+            </div>
+          ))}
         </div>
-        {resultado.motivos.length > 0
-          ? <ul>{resultado.motivos.map((motivo) => <li key={motivo}>{motivo}</li>)}</ul>
-          : <p>Cumple la asistencia, el promedio y todas las correlativas requeridas.</p>}
-      </> : <p>El resultado aparecerá después de elegir un curso, un alumno y completar los datos.</p>}
+      </>}
+      {!cargandoCondiciones && !resultado && !cursoId && <p>Las condiciones aparecerán al elegir un curso.</p>}
     </article>
   </div>
 }
