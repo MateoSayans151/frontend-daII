@@ -59,6 +59,19 @@ export interface Correlatividad {
   correlativaId: number
   tipo: TipoCorrelatividad
 }
+export interface MateriaCorrelativa {
+  id: number
+  codigo: string
+  nombre: string
+}
+export interface CondicionCorrelatividad {
+  tipo: TipoCorrelatividad
+  materiasCorrelativas: MateriaCorrelativa[]
+}
+export interface CondicionesRegularidad {
+  asignaturaId: number
+  condiciones: CondicionCorrelatividad[]
+}
 export interface CrearCorrelatividad {
   correlativaId: number
   tipo: TipoCorrelatividad

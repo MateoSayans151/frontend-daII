@@ -460,22 +460,34 @@ function CorrelatividadesPanel({ onNotify }: { onNotify: (value: string) => void
   useEffect(() => { dispatch(listarCarreras()) }, [dispatch])
   useEffect(() => { if (carreraId) dispatch(listarPlanesDeEstudio(carreraId)) }, [dispatch, carreraId])
   useEffect(() => { if (planId) dispatch(listarAsignaturas(planId)) }, [dispatch, planId])
-  useEffect(() => { if (asignaturaId) dispatch(listarCorrelatividades(asignaturaId)) }, [dispatch, asignaturaId])
+  useEffect(() => {
+    if (!asignaturaId) return
+    const solicitud = dispatch(listarCorrelatividades(asignaturaId))
+    return () => { solicitud.abort() }
+  }, [dispatch, asignaturaId])
 
   const seleccionarCarrera = (value: string) => {
     setCarreraId(value ? Number(value) : null)
     setPlanId(null)
     setAsignaturaId(null)
+    setCorrelativaId('')
   }
 
   const seleccionarPlan = (value: string) => {
     setPlanId(value ? Number(value) : null)
     setAsignaturaId(null)
+    setCorrelativaId('')
   }
 
-  const opciones = asignaturas.items.filter((a) => a.id !== asignaturaId)
+  const correlativasConfiguradas = new Set(correlatividades.items
+    .flatMap((condicion) => condicion.materiasCorrelativas.map((materia) => materia.id)))
+  const opciones = asignaturas.items.filter((a) => a.id !== asignaturaId && !correlativasConfiguradas.has(a.id))
 
   const agregar = async () => {
+    if (correlatividades.cargando) {
+      onNotify('Esperá a que terminen de cargar las correlatividades.')
+      return
+    }
     if (!asignaturaId || !correlativaId) {
       onNotify('Seleccioná una asignatura correlativa.')
       return
@@ -484,6 +496,7 @@ function CorrelatividadesPanel({ onNotify }: { onNotify: (value: string) => void
     if (crearCorrelatividad.fulfilled.match(resultado)) {
       onNotify('Correlatividad agregada')
       setCorrelativaId('')
+      dispatch(listarCorrelatividades(asignaturaId))
     }
   }
 
@@ -519,7 +532,10 @@ function CorrelatividadesPanel({ onNotify }: { onNotify: (value: string) => void
       <AcademicSelect
         label="Asignatura"
         value={asignaturaId ? String(asignaturaId) : ''}
-        onChange={(value) => setAsignaturaId(value ? Number(value) : null)}
+        onChange={(value) => {
+          setAsignaturaId(value ? Number(value) : null)
+          setCorrelativaId('')
+        }}
         options={opcionesAsignatura(asignaturas.items)}
         placeholder="Seleccioná una asignatura"
         searchPlaceholder="Buscar asignatura por código o nombre"
@@ -536,14 +552,13 @@ function CorrelatividadesPanel({ onNotify }: { onNotify: (value: string) => void
       ? <p className="muted-copy">Elegí una asignatura para ver y agregar sus correlatividades.</p>
       : <article className="panel">
           {correlatividades.error && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {correlatividades.error}</div>}
-          <div className="detail-label">CORRELATIVIDADES REQUERIDAS <span>{correlatividades.items.length}</span></div>
+          <div className="detail-label">CORRELATIVIDADES REQUERIDAS <span>{correlatividades.items.reduce((total, condicion) => total + condicion.materiasCorrelativas.length, 0)}</span></div>
           {correlatividades.items.length === 0 && <p className="muted-copy">No hay correlatividades configuradas.</p>}
-          {correlatividades.items.map((correlatividad) => {
-            const requerida = asignaturas.items.find((a) => a.id === correlatividad.correlativaId)
-            return <div className="requirement" key={correlatividad.id}>
-              <span><strong>{requerida?.nombre ?? `Asignatura #${correlatividad.correlativaId}`}</strong><small>{requerida?.codigo} · {correlatividad.tipo}</small></span>
+          {correlatividades.items.flatMap((condicion) => condicion.materiasCorrelativas.map((correlativa) => {
+            return <div className="requirement" key={`${condicion.tipo}-${correlativa.id}`}>
+              <span><strong>{correlativa.nombre}</strong><small>{correlativa.codigo} · {condicion.tipo}</small></span>
             </div>
-          })}
+          }))}
           <div className="correlative-add">
             <AcademicSelect
               label="Materia correlativa"
@@ -555,7 +570,8 @@ function CorrelatividadesPanel({ onNotify }: { onNotify: (value: string) => void
               helperText="Materia que debe regularizarse o aprobarse antes."
               emptyMessage="No hay otras asignaturas disponibles."
               noResultsMessage="No hay asignaturas que coincidan con esa búsqueda."
-              loading={asignaturas.cargando}
+              loading={asignaturas.cargando || correlatividades.cargando}
+              disabled={correlatividades.cargando || Boolean(correlatividades.error)}
               clearable
             />
             <AcademicSelect
@@ -571,7 +587,7 @@ function CorrelatividadesPanel({ onNotify }: { onNotify: (value: string) => void
               helperText="Definí qué condición tiene que cumplir."
               emptyMessage="No hay requisitos disponibles."
             />
-            <button className="secondary-button" onClick={agregar}><Plus size={16} /> Agregar correlativa</button>
+            <button className="secondary-button" onClick={agregar} disabled={correlatividades.cargando || Boolean(correlatividades.error)}><Plus size={16} /> Agregar correlativa</button>
           </div>
         </article>}
   </>

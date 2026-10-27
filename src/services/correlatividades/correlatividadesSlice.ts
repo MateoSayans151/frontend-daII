@@ -1,10 +1,21 @@
-import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit'
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import { correlatividadesService } from './correlatividadesService'
 import { extraerMensajeError } from '../api/erroresApi'
 import { estadoListaInicial, type EstadoLista } from '../api/estadoLista'
-import type { Correlatividad, CrearCorrelatividad } from '../../types/api'
+import type { CondicionCorrelatividad, CondicionesRegularidad, Correlatividad, CrearCorrelatividad } from '../../types/api'
 
-export const listarCorrelatividades = createAsyncThunk<Correlatividad[], number, { rejectValue: string }>(
+interface EstadoCorrelatividades extends EstadoLista<CondicionCorrelatividad> {
+  asignaturaId: number | null
+  solicitudActivaId: string | null
+}
+
+const estadoInicial: EstadoCorrelatividades = {
+  ...estadoListaInicial<CondicionCorrelatividad>(),
+  asignaturaId: null,
+  solicitudActivaId: null,
+}
+
+export const listarCorrelatividades = createAsyncThunk<CondicionesRegularidad, number, { rejectValue: string }>(
   'correlatividades/listar',
   async (asignaturaId, { rejectWithValue }) => {
     try {
@@ -29,33 +40,36 @@ export const crearCorrelatividad = createAsyncThunk<
 
 const correlatividadesSlice = createSlice({
   name: 'correlatividades',
-  initialState: estadoListaInicial<Correlatividad>(),
+  initialState: estadoInicial,
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(listarCorrelatividades.pending, (state) => {
+      .addCase(listarCorrelatividades.pending, (state, action) => {
         state.cargando = true
         state.error = null
+        state.items = []
+        state.asignaturaId = action.meta.arg
+        state.solicitudActivaId = action.meta.requestId
       })
-      .addCase(
-        listarCorrelatividades.fulfilled,
-        (state: EstadoLista<Correlatividad>, action: PayloadAction<Correlatividad[]>) => {
-          state.cargando = false
-          state.items = action.payload
-        },
-      )
-      .addCase(listarCorrelatividades.rejected, (state, action) => {
+      .addCase(listarCorrelatividades.fulfilled, (state, action) => {
+        if (state.solicitudActivaId !== action.meta.requestId) return
         state.cargando = false
+        state.solicitudActivaId = null
+        state.items = action.payload.condiciones
+      })
+      .addCase(listarCorrelatividades.rejected, (state, action) => {
+        if (state.solicitudActivaId !== action.meta.requestId) return
+        state.cargando = false
+        state.solicitudActivaId = null
+        if (action.meta.aborted) return
         state.error = action.payload ?? 'No se pudieron obtener las correlatividades'
       })
 
-      .addCase(
-        crearCorrelatividad.fulfilled,
-        (state: EstadoLista<Correlatividad>, action: PayloadAction<Correlatividad>) => {
-          state.items.push(action.payload)
-        },
-      )
+      .addCase(crearCorrelatividad.fulfilled, (state, action) => {
+        if (state.asignaturaId === action.meta.arg.asignaturaId) state.error = null
+      })
       .addCase(crearCorrelatividad.rejected, (state, action) => {
+        if (state.asignaturaId !== action.meta.arg.asignaturaId) return
         state.error = action.payload ?? 'No se pudo agregar la correlatividad'
       })
   },
