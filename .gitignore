@@ -14,6 +14,7 @@ dist-ssr
 
 # Local agent tooling and design review state
 .agents/
+.claude/
 .codex/
 .impeccable/
 skills-lock.json

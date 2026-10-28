@@ -137,11 +137,11 @@ function PeriodosPanel({ query, onNotify }: { query: string; onNotify: (v: strin
             <h2>{periodo.numero}.º cuatrimestre {periodo.anio}</h2>
             <div className="cycle-date-group">
               <span>Período académico</span>
-              <p><CalendarBlank size={16} /> {fechaLegible(periodo.fechaInicio)} — {fechaLegible(periodo.fechaFin)}</p>
+              <p><CalendarBlank size={16} /> {fechaLegible(periodo.fechaInicio)} – {fechaLegible(periodo.fechaFin)}</p>
             </div>
             <div className="cycle-date-group">
               <span>Inscripción a materias</span>
-              <p><CalendarBlank size={16} /> {fechaLegible(periodo.inscripcionDesde)} — {fechaLegible(periodo.inscripcionHasta)}</p>
+              <p><CalendarBlank size={16} /> {fechaLegible(periodo.inscripcionDesde)} – {fechaLegible(periodo.inscripcionHasta)}</p>
             </div>
           </article>
         ))}
@@ -233,11 +233,11 @@ function TurnosPanel({ query, onNotify }: { query: string; onNotify: (v: string)
             <h2>{turno.nombre}</h2>
             <div className="cycle-date-group">
               <span>Turno de examen</span>
-              <p><CalendarBlank size={16} /> {fechaLegible(turno.fechaInicio)} — {fechaLegible(turno.fechaFin)}</p>
+              <p><CalendarBlank size={16} /> {fechaLegible(turno.fechaInicio)} – {fechaLegible(turno.fechaFin)}</p>
             </div>
             <div className="cycle-date-group">
               <span>Inscripción a examen</span>
-              <p><CalendarBlank size={16} /> {fechaLegible(turno.inscripcionDesde)} — {fechaLegible(turno.inscripcionHasta)}</p>
+              <p><CalendarBlank size={16} /> {fechaLegible(turno.inscripcionDesde)} – {fechaLegible(turno.inscripcionHasta)}</p>
             </div>
           </article>
         ))}
