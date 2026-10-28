@@ -1,6 +1,7 @@
 // Tipos que reflejan los DTOs del backend (Modelos/*.java).
 
 export type EstadoAcademico = 'ACTIVA' | 'BORRADOR' | 'INACTIVA'
+export type EstadoPlanEstudio = 'PLANIFICADO' | 'ACTIVO'
 
 export interface Carrera {
   id: number
@@ -10,6 +11,7 @@ export interface Carrera {
   duracion: string
   titulo: string
   estado: EstadoAcademico
+  ultimoPlanActivo: PlanDeEstudio | null
 }
 export interface CrearCarrera {
   codigo: string
@@ -24,14 +26,16 @@ export interface PlanDeEstudio {
   nombre: string
   vigenciaDesde: string
   cantidadAsignaturas: number
-  estado: EstadoAcademico
+  estado: EstadoPlanEstudio
   carreraId: number
 }
 export interface CrearPlanDeEstudio {
   codigo: string
   nombre: string
   vigenciaDesde: string
-  cantidadAsignaturas: number
+}
+export interface ActualizarPlanDeEstudio extends CrearPlanDeEstudio {
+  estado: EstadoPlanEstudio
 }
 
 export interface Asignatura {

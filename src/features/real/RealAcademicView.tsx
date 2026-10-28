@@ -12,13 +12,18 @@ import {
   desactivarCarrera,
   listarCarreras,
 } from '../../services/carreras/carrerasSlice'
-import { crearPlanDeEstudio, listarPlanesDeEstudio } from '../../services/planesEstudio/planesEstudioSlice'
+import {
+  actualizarPlanDeEstudio,
+  crearPlanDeEstudio,
+  eliminarPlanDeEstudio,
+  listarPlanesDeEstudio,
+} from '../../services/planesEstudio/planesEstudioSlice'
 import { crearAsignatura, listarAsignaturas } from '../../services/asignaturas/asignaturasSlice'
 import {
   crearCorrelatividad,
   listarCorrelatividades,
 } from '../../services/correlatividades/correlatividadesSlice'
-import type { Asignatura, Carrera, CrearCarrera, EstadoAcademico, PlanDeEstudio, TipoCorrelatividad } from '../../types/api'
+import type { Asignatura, Carrera, CrearCarrera, EstadoAcademico, EstadoPlanEstudio, PlanDeEstudio, TipoCorrelatividad } from '../../types/api'
 import type { Screen } from '../../types/domain'
 import {
   CODIGO_ACADEMICO_MENSAJE,
@@ -31,6 +36,8 @@ type Props = { screen: Screen; query: string; setQuery: (value: string) => void;
 type EstadoOptionTone = 'success' | 'draft' | 'warning'
 const estadoClase: Record<EstadoAcademico, EstadoOptionTone> = { ACTIVA: 'success', BORRADOR: 'draft', INACTIVA: 'warning' }
 const estadoEtiqueta: Record<EstadoAcademico, string> = { ACTIVA: 'Activa', BORRADOR: 'Borrador', INACTIVA: 'Inactiva' }
+const estadoPlanClase: Record<EstadoPlanEstudio, EstadoOptionTone> = { PLANIFICADO: 'draft', ACTIVO: 'success' }
+const estadoPlanEtiqueta: Record<EstadoPlanEstudio, string> = { PLANIFICADO: 'Planificado', ACTIVO: 'Activo' }
 
 const opcionesCarrera = (items: Carrera[]): AcademicSelectOption[] => items.map((carrera) => ({
   value: String(carrera.id),
@@ -53,8 +60,8 @@ const opcionesPlan = (items: PlanDeEstudio[]): AcademicSelectOption[] => items.m
   label: plan.nombre,
   description: 'Vigente desde ' + fechaLegible(plan.vigenciaDesde),
   meta: plan.cantidadAsignaturas + ' asignaturas',
-  badge: estadoEtiqueta[plan.estado],
-  badgeTone: estadoClase[plan.estado],
+  badge: estadoPlanEtiqueta[plan.estado],
+  badgeTone: estadoPlanClase[plan.estado],
 }))
 
 const opcionesAsignatura = (items: Asignatura[]): AcademicSelectOption[] => items.map((asignatura) => ({
@@ -183,9 +190,10 @@ function PlanesPanel({ onNotify }: { onNotify: (value: string) => void }) {
   const carreras = useAppSelector((state) => state.carreras)
   const planes = useAppSelector((state) => state.planesEstudio)
   const [carreraId, setCarreraId] = useState<number | null>(null)
-  const [formAbierto, setFormAbierto] = useState(false)
-  const [valores, setValores] = useState({ codigo: '', nombre: '', vigenciaDesde: '', cantidadAsignaturas: '' })
+  const [formAbierto, setFormAbierto] = useState<'nuevo' | number | null>(null)
+  const [valores, setValores] = useState({ codigo: '', nombre: '', vigenciaDesde: '', estado: 'PLANIFICADO' as EstadoPlanEstudio })
   const carreraSeleccionada = carreras.items.find((carrera) => carrera.id === carreraId)
+  const planEditado = typeof formAbierto === 'number' ? planes.items.find((plan) => plan.id === formAbierto) : undefined
 
   useEffect(() => {
     dispatch(listarCarreras())
@@ -195,25 +203,55 @@ function PlanesPanel({ onNotify }: { onNotify: (value: string) => void }) {
     if (carreraId) dispatch(listarPlanesDeEstudio(carreraId))
   }, [dispatch, carreraId])
 
-  const crear = async () => {
+  const cerrarFormulario = () => {
+    setFormAbierto(null)
+    setValores({ codigo: '', nombre: '', vigenciaDesde: '', estado: 'PLANIFICADO' })
+  }
+
+  const abrirCreacion = () => {
+    setValores({ codigo: '', nombre: '', vigenciaDesde: '', estado: 'PLANIFICADO' })
+    setFormAbierto('nuevo')
+  }
+
+  const abrirEdicion = (plan: PlanDeEstudio) => {
+    setValores({ codigo: plan.codigo, nombre: plan.nombre, vigenciaDesde: plan.vigenciaDesde, estado: plan.estado })
+    setFormAbierto(plan.id)
+  }
+
+  const guardar = async () => {
     if (!carreraId) return
     if (!esCodigoAcademicoValido(valores.codigo)) {
       onNotify(CODIGO_ACADEMICO_MENSAJE)
       return
     }
-    if (!valores.nombre.trim() || !valores.vigenciaDesde || !Number.isInteger(Number(valores.cantidadAsignaturas)) || Number(valores.cantidadAsignaturas) < 1) {
-      onNotify('Completá el año, la fecha de vigencia y una cantidad válida de asignaturas.')
+    if (!valores.nombre.trim() || !valores.vigenciaDesde) {
+      onNotify('Completá el año y la fecha de vigencia.')
       return
     }
-    const resultado = await dispatch(crearPlanDeEstudio({
-      carreraId,
-      datos: { ...valores, cantidadAsignaturas: Number(valores.cantidadAsignaturas) },
-    }))
-    if (crearPlanDeEstudio.fulfilled.match(resultado)) {
+    if (formAbierto === 'nuevo') {
+      const resultado = await dispatch(crearPlanDeEstudio({
+        carreraId,
+        datos: { codigo: valores.codigo, nombre: valores.nombre, vigenciaDesde: valores.vigenciaDesde },
+      }))
+      if (!crearPlanDeEstudio.fulfilled.match(resultado)) return
       onNotify('Plan de estudio creado correctamente')
-      setValores({ codigo: '', nombre: '', vigenciaDesde: '', cantidadAsignaturas: '' })
-      setFormAbierto(false)
+      cerrarFormulario()
+      return
     }
+    if (typeof formAbierto !== 'number') return
+    const resultado = await dispatch(actualizarPlanDeEstudio({ planId: formAbierto, datos: valores }))
+    if (!actualizarPlanDeEstudio.fulfilled.match(resultado)) return
+    onNotify('Plan de estudio actualizado')
+    cerrarFormulario()
+    dispatch(listarCarreras())
+  }
+
+  const eliminar = async (planId: number) => {
+    if (!window.confirm('¿Querés eliminar este plan y sus asignaturas? Esta acción no se puede deshacer.')) return
+    const resultado = await dispatch(eliminarPlanDeEstudio(planId))
+    if (!eliminarPlanDeEstudio.fulfilled.match(resultado)) return
+    onNotify('Plan de estudio eliminado')
+    if (formAbierto === planId) cerrarFormulario()
   }
 
   return <>
@@ -230,7 +268,10 @@ function PlanesPanel({ onNotify }: { onNotify: (value: string) => void }) {
       <AcademicSelect
         label="Carrera"
         value={carreraId ? String(carreraId) : ''}
-        onChange={(value) => setCarreraId(value ? Number(value) : null)}
+        onChange={(value) => {
+          setCarreraId(value ? Number(value) : null)
+          cerrarFormulario()
+        }}
         options={opcionesCarrera(carreras.items)}
         placeholder="Seleccioná una carrera"
         searchPlaceholder="Buscar carrera por código, nombre o facultad"
@@ -256,7 +297,7 @@ function PlanesPanel({ onNotify }: { onNotify: (value: string) => void }) {
         </div>
       : <>
           {planes.error && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {planes.error}</div>}
-          <div className="list-meta"><span>{planes.items.length} planes</span><button className="text-button" onClick={() => setFormAbierto((v) => !v)}>{formAbierto ? 'Cancelar' : '+ Crear plan'}</button></div>
+          <div className="list-meta"><span>{planes.items.length} planes</span><button className="text-button" onClick={formAbierto === 'nuevo' ? cerrarFormulario : abrirCreacion}>{formAbierto === 'nuevo' ? 'Cancelar' : '+ Crear plan'}</button></div>
 
           {formAbierto && (
             <article className="panel create-form-panel">
@@ -264,16 +305,22 @@ function PlanesPanel({ onNotify }: { onNotify: (value: string) => void }) {
                 <label>Código<input value={valores.codigo} maxLength={8} onChange={(e) => setValores({ ...valores, codigo: normalizarCodigoAcademico(e.target.value) })} placeholder="Ej. ARQ-001" pattern="[A-Z]{3}[0-9]?-[0-9]{3}" title={CODIGO_ACADEMICO_MENSAJE} /></label>
                 <label>Año del plan<select value={valores.nombre.replace('Plan de estudio ', '')} onChange={(e) => setValores({ ...valores, nombre: `Plan de estudio ${e.target.value}` })}><option value="">Seleccioná el año</option>{opcionesAnioCalendario.map((anio) => <option key={anio} value={anio}>{anio}</option>)}</select></label>
                 <CalendarDatePicker label="Vigente desde" value={valores.vigenciaDesde} onChange={(vigenciaDesde) => setValores({ ...valores, vigenciaDesde })} />
-                <label>Cantidad de asignaturas<input type="number" min="0" value={valores.cantidadAsignaturas} onChange={(e) => setValores({ ...valores, cantidadAsignaturas: e.target.value })} /></label>
+                {formAbierto !== 'nuevo' && <label>Estado
+                  <select value={valores.estado} disabled={planEditado?.estado === 'ACTIVO'} onChange={(e) => setValores({ ...valores, estado: e.target.value as EstadoPlanEstudio })}>
+                    <option value="PLANIFICADO">Planificado</option>
+                    <option value="ACTIVO">Activo</option>
+                  </select>
+                </label>}
               </div>
-              <button className="primary-button" onClick={crear}><Check size={16} /> Guardar</button>
+              <button className="primary-button" onClick={guardar}><Check size={16} /> Guardar</button>
+              {formAbierto !== 'nuevo' && <button className="secondary-button" onClick={cerrarFormulario}><X size={16} /> Cancelar</button>}
             </article>
           )}
 
           {planes.cargando && planes.items.length === 0 ? <SurfaceSkeleton label="planes de estudio" /> : (
             <div className="table-wrap">
               <table>
-                <thead><tr><th>Código</th><th>Nombre</th><th>Vigente desde</th><th>Asignaturas</th><th>Estado</th></tr></thead>
+                <thead><tr><th>Código</th><th>Nombre</th><th>Vigente desde</th><th>Asignaturas</th><th>Estado</th><th>Acciones</th></tr></thead>
                 <tbody>
                   {planes.items.map((plan) => (
                     <tr key={plan.id}>
@@ -281,7 +328,11 @@ function PlanesPanel({ onNotify }: { onNotify: (value: string) => void }) {
                       <td><strong>{plan.nombre}</strong></td>
                       <td>{plan.vigenciaDesde}</td>
                       <td>{plan.cantidadAsignaturas}</td>
-                      <td><span className={`status ${estadoClase[plan.estado]}`}><i />{plan.estado}</span></td>
+                      <td><span className={`status ${estadoPlanClase[plan.estado]}`}><i />{estadoPlanEtiqueta[plan.estado]}</span></td>
+                      <td>
+                        <button className="row-action" onClick={() => abrirEdicion(plan)} aria-label={`Editar ${plan.nombre}`}><PencilSimple size={17} /></button>
+                        {plan.estado === 'PLANIFICADO' && <button className="row-action danger" onClick={() => eliminar(plan.id)} aria-label={`Eliminar ${plan.nombre}`}><Trash size={17} /></button>}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -353,6 +404,7 @@ function AsignaturasPanel({ onNotify }: { onNotify: (value: string) => void }) {
       setValores({ codigo: '', nombre: '', anio: '', creditos: '', cargaHoraria: '' })
       setFormAbierto(false)
       dispatch(listarCarreras())
+      if (carreraId) dispatch(listarPlanesDeEstudio(carreraId))
     }
   }
 

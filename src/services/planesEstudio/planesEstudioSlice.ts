@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/tool
 import { planesEstudioService } from './planesEstudioService'
 import { extraerMensajeError } from '../api/erroresApi'
 import { estadoListaInicial, type EstadoLista } from '../api/estadoLista'
-import type { CrearPlanDeEstudio, PlanDeEstudio } from '../../types/api'
+import type { ActualizarPlanDeEstudio, CrearPlanDeEstudio, PlanDeEstudio } from '../../types/api'
 
 // Lista de planes de la carrera actualmente seleccionada (se reemplaza entera
 // al cambiar de carrera y evita mezclar resultados de selecciones anteriores).
@@ -28,6 +28,30 @@ export const crearPlanDeEstudio = createAsyncThunk<
     return rejectWithValue(extraerMensajeError(error))
   }
 })
+
+export const actualizarPlanDeEstudio = createAsyncThunk<
+  PlanDeEstudio,
+  { planId: number; datos: ActualizarPlanDeEstudio },
+  { rejectValue: string }
+>('planesEstudio/actualizar', async ({ planId, datos }, { rejectWithValue }) => {
+  try {
+    return await planesEstudioService.actualizar(planId, datos)
+  } catch (error) {
+    return rejectWithValue(extraerMensajeError(error))
+  }
+})
+
+export const eliminarPlanDeEstudio = createAsyncThunk<number, number, { rejectValue: string }>(
+  'planesEstudio/eliminar',
+  async (planId, { rejectWithValue }) => {
+    try {
+      await planesEstudioService.eliminar(planId)
+      return planId
+    } catch (error) {
+      return rejectWithValue(extraerMensajeError(error))
+    }
+  },
+)
 
 const planesEstudioSlice = createSlice({
   name: 'planesEstudio',
@@ -59,6 +83,19 @@ const planesEstudioSlice = createSlice({
       )
       .addCase(crearPlanDeEstudio.rejected, (state, action) => {
         state.error = action.payload ?? 'No se pudo crear el plan de estudio'
+      })
+      .addCase(actualizarPlanDeEstudio.fulfilled, (state: EstadoLista<PlanDeEstudio>, action: PayloadAction<PlanDeEstudio>) => {
+        const indice = state.items.findIndex((plan) => plan.id === action.payload.id)
+        if (indice >= 0) state.items[indice] = action.payload
+      })
+      .addCase(actualizarPlanDeEstudio.rejected, (state, action) => {
+        state.error = action.payload ?? 'No se pudo actualizar el plan de estudio'
+      })
+      .addCase(eliminarPlanDeEstudio.fulfilled, (state: EstadoLista<PlanDeEstudio>, action: PayloadAction<number>) => {
+        state.items = state.items.filter((plan) => plan.id !== action.payload)
+      })
+      .addCase(eliminarPlanDeEstudio.rejected, (state, action) => {
+        state.error = action.payload ?? 'No se pudo eliminar el plan de estudio'
       })
   },
 })
