@@ -1,4 +1,5 @@
 import { Plus } from '@phosphor-icons/react'
+import { navGroups } from '../../app/navigation'
 import type { Screen } from '../../types/domain'
 
 type PageHeadingProps = { screen: Screen; onCreate?: () => void }
@@ -20,5 +21,14 @@ const copy: Record<Screen, [string, string]> = {
 
 export function PageHeading({ screen, onCreate }: PageHeadingProps) {
   const [title, subtitle] = copy[screen]
-  return <div className="page-heading"><div><h1>{title}</h1><p>{subtitle}</p></div>{screen !== 'Resumen' && onCreate && <button className="primary-button heading-action" onClick={onCreate}><Plus size={17} /> Crear nuevo</button>}</div>
+  const section = navGroups.find((group) => group.items.some((item) => item.name === screen))?.label ?? 'Gestión académica'
+
+  return <div className="page-heading">
+    <div className="page-heading__copy">
+      <span className="eyebrow page-heading__context">{section}</span>
+      <h1>{title}</h1>
+      <p>{subtitle}</p>
+    </div>
+    {screen !== 'Resumen' && onCreate && <button className="primary-button heading-action" onClick={onCreate}><Plus size={17} /> Crear nuevo</button>}
+  </div>
 }

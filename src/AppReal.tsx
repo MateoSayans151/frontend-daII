@@ -61,44 +61,46 @@ function AppReal({ previewMode = false }: { previewMode?: boolean } = {}) {
         perfilSubtitulo={usuario?.permiso}
         onLogout={previewMode ? () => window.location.assign("/") : () => dispatch(cerrarSesion())}
       >
-        {previewMode && (
-          <div className="local-preview-banner" role="status">
-            <strong>Vista previa local</strong>
-            <span>Spring Boot no está conectado. Podés recorrer el panel; los datos y cambios requieren el backend.</span>
-          </div>
-        )}
-        <PageHeading screen={screen} />
-        {screen === "Resumen" && (
-          <RealDashboardPage
-            onNavigate={navigate}
-            onCreate={() => navigate("Carreras")}
-          />
-        )}
-        {academicScreens.includes(screen) && (
-          <RealAcademicView
-            screen={screen}
-            query={query}
-            setQuery={setQuery}
-            onNotify={notify}
-          />
-        )}
-        {planningScreens.includes(screen) && (
-          <RealPlanningView
-            screen={screen}
-            query={query}
-            setQuery={setQuery}
-            onNotify={notify}
-          />
-        )}
-        {cycleScreens.includes(screen) && (
-          <RealCycleView
-            screen={screen}
-            query={query}
-            setQuery={setQuery}
-            onNotify={notify}
-          />
-        )}
-        {screen === "Regularidad" && <RealRegularityView onNotify={notify} />}
+        <div className="screen-transition" key={screen}>
+          {previewMode && (
+            <div className="local-preview-banner" role="status">
+              <strong>Vista previa local</strong>
+              <span>Spring Boot no está conectado. Podés recorrer el panel; los datos y cambios requieren el backend.</span>
+            </div>
+          )}
+          <PageHeading screen={screen} />
+          {screen === "Resumen" && (
+            <RealDashboardPage
+              onNavigate={navigate}
+              onCreate={() => navigate("Carreras")}
+            />
+          )}
+          {academicScreens.includes(screen) && (
+            <RealAcademicView
+              screen={screen}
+              query={query}
+              setQuery={setQuery}
+              onNotify={notify}
+            />
+          )}
+          {planningScreens.includes(screen) && (
+            <RealPlanningView
+              screen={screen}
+              query={query}
+              setQuery={setQuery}
+              onNotify={notify}
+            />
+          )}
+          {cycleScreens.includes(screen) && (
+            <RealCycleView
+              screen={screen}
+              query={query}
+              setQuery={setQuery}
+              onNotify={notify}
+            />
+          )}
+          {screen === "Regularidad" && <RealRegularityView onNotify={notify} />}
+        </div>
       </DashboardLayout>
       {toast && <Toast message={toast} />}
     </>
