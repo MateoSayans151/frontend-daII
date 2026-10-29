@@ -208,7 +208,7 @@ export function CursosPanel({ query, setQuery, onNotify }: { query: string; setQ
   }))
   const opcionesPeriodo: AcademicSelectOption[] = catalogos.periodos.map((periodo) => ({
     value: String(periodo.id), label: `${periodo.numero}.º cuatrimestre ${periodo.anio}`,
-    meta: `${periodo.fechaInicio} — ${periodo.fechaFin}`,
+    meta: `${periodo.fechaInicio} – ${periodo.fechaFin}`,
   }))
   const opcionesSede: AcademicSelectOption[] = catalogos.sedes.map((sede) => ({
     value: String(sede.id), label: sede.nombre, description: sede.direccion,
@@ -566,7 +566,7 @@ function DetalleCurso({
             <tbody>{curso.inscripciones.map((item) => (
               <tr key={item.id}>
                 <td>{item.alumnoId}</td><td>{item.fechaInscripcion}</td><td>{item.estado}</td>
-                <td>{item.notaFinal ?? '—'}</td><td>{item.fechaResultado ?? '—'}</td>
+                <td>{item.notaFinal ?? '–'}</td><td>{item.fechaResultado ?? '–'}</td>
               </tr>
             ))}</tbody>
           </table>

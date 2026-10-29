@@ -228,19 +228,13 @@
 .dashboard-skeleton {
   display: block;
   border-radius: 6px;
-  background: linear-gradient(100deg, #edf1f6 25%, #f7f9fc 45%, #edf1f6 65%);
-  background-size: 220% 100%;
-  animation: dashboard-shimmer 1.4s ease-in-out infinite;
+  background: #edf0f4;
 }
 
 .metric-skeleton {
   width: 46px;
   height: 30px;
   margin-top: 4px;
-}
-
-@keyframes dashboard-shimmer {
-  to { background-position-x: -220%; }
 }
 
 .dashboard-actions-section {
@@ -501,9 +495,7 @@
   display: block;
   height: 34px;
   border-radius: 7px;
-  background: linear-gradient(100deg, #f0f3f7 25%, #f8fafc 45%, #f0f3f7 65%);
-  background-size: 220% 100%;
-  animation: dashboard-shimmer 1.4s ease-in-out infinite;
+  background: #edf0f4;
 }
 
 .dashboard-empty {

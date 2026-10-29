@@ -30,7 +30,10 @@ export const store = configureStore({
 })
 
 // Reconstruye la sesión local a partir de la cookie HttpOnly JSESSIONID.
-store.dispatch(obtenerUsuarioActual())
+// La ruta de vista previa de Vite omite la consulta de autenticación.
+if (!(import.meta.env.DEV && window.location.pathname === '/preview')) {
+  store.dispatch(obtenerUsuarioActual())
+}
 
 export type RootState = ReturnType<typeof store.getState>
 export type AppDispatch = typeof store.dispatch

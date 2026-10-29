@@ -11,6 +11,18 @@ import { RealPlanningView } from "./features/real/RealPlanningView";
 import { RealCycleView } from "./features/real/RealCycleView";
 import { RealRegularityView } from "./features/real/RealRegularityView";
 import type { Screen } from "./types/domain";
+import type { Usuario } from "./types/api";
+
+const usuarioVistaPrevia: Usuario = {
+  id: "preview",
+  nombre: "Secretaría Académica",
+  email: "preview@uadenet.local",
+  permiso: "Vista previa local",
+  roles: [],
+  permissions: [],
+  status: "ACTIVE",
+  activo: true,
+};
 
 const academicScreens: Screen[] = [
   "Carreras",
@@ -22,9 +34,10 @@ const planningScreens: Screen[] = ["Sedes y aulas", "Cursos", "Asignaciones", "A
 const cycleScreens: Screen[] = ["Períodos", "Turnos de examen"];
 
 // Cada pantalla despacha sus propios thunks y usa identificadores reales del backend.
-function AppReal() {
+function AppReal({ previewMode = false }: { previewMode?: boolean } = {}) {
   const dispatch = useAppDispatch();
-  const usuario = useAppSelector((state) => state.usuarios.actual);
+  const usuarioSesion = useAppSelector((state) => state.usuarios.actual);
+  const usuario = previewMode ? usuarioVistaPrevia : usuarioSesion;
   const [screen, setScreen] = useState<Screen>("Resumen");
   const [query, setQuery] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -46,40 +59,48 @@ function AppReal() {
         openSidebar={() => setSidebarOpen(true)}
         perfilNombre={usuario?.nombre}
         perfilSubtitulo={usuario?.permiso}
-        onLogout={() => dispatch(cerrarSesion())}
+        onLogout={previewMode ? () => window.location.assign("/") : () => dispatch(cerrarSesion())}
       >
-        <PageHeading screen={screen} />
-        {screen === "Resumen" && (
-          <RealDashboardPage
-            onNavigate={navigate}
-            onCreate={() => navigate("Carreras")}
-          />
-        )}
-        {academicScreens.includes(screen) && (
-          <RealAcademicView
-            screen={screen}
-            query={query}
-            setQuery={setQuery}
-            onNotify={notify}
-          />
-        )}
-        {planningScreens.includes(screen) && (
-          <RealPlanningView
-            screen={screen}
-            query={query}
-            setQuery={setQuery}
-            onNotify={notify}
-          />
-        )}
-        {cycleScreens.includes(screen) && (
-          <RealCycleView
-            screen={screen}
-            query={query}
-            setQuery={setQuery}
-            onNotify={notify}
-          />
-        )}
-        {screen === "Regularidad" && <RealRegularityView onNotify={notify} />}
+        <div className="screen-transition" key={screen}>
+          {previewMode && (
+            <div className="local-preview-banner" role="status">
+              <strong>Vista previa local</strong>
+              <span>Spring Boot no está conectado. Podés recorrer el panel; los datos y cambios requieren el backend.</span>
+            </div>
+          )}
+          <PageHeading screen={screen} />
+          {screen === "Resumen" && (
+            <RealDashboardPage
+              onNavigate={navigate}
+              onCreate={() => navigate("Carreras")}
+            />
+          )}
+          {academicScreens.includes(screen) && (
+            <RealAcademicView
+              screen={screen}
+              query={query}
+              setQuery={setQuery}
+              onNotify={notify}
+            />
+          )}
+          {planningScreens.includes(screen) && (
+            <RealPlanningView
+              screen={screen}
+              query={query}
+              setQuery={setQuery}
+              onNotify={notify}
+            />
+          )}
+          {cycleScreens.includes(screen) && (
+            <RealCycleView
+              screen={screen}
+              query={query}
+              setQuery={setQuery}
+              onNotify={notify}
+            />
+          )}
+          {screen === "Regularidad" && <RealRegularityView onNotify={notify} />}
+        </div>
       </DashboardLayout>
       {toast && <Toast message={toast} />}
     </>

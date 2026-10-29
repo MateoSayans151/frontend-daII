@@ -1,10 +1,11 @@
 import { Plus } from '@phosphor-icons/react'
+import { navGroups } from '../../app/navigation'
 import type { Screen } from '../../types/domain'
 
 type PageHeadingProps = { screen: Screen; onCreate?: () => void }
 
 const copy: Record<Screen, [string, string]> = {
-  Resumen: ['Buen día, equipo.', 'Organizá la estructura académica y planificá el próximo cuatrimestre desde un único lugar.'],
+  Resumen: ['Resumen académico', 'Organizá la estructura académica y planificá el próximo cuatrimestre desde un único lugar.'],
   Carreras: ['Carreras', 'Administrá las propuestas académicas de la universidad.'],
   'Planes de estudio': ['Planes de estudio', 'Diseñá la trayectoria de cada carrera, con sus materias y correlatividades.'],
   Asignaturas: ['Asignaturas', 'Mantené el catálogo de materias y sus datos académicos.'],
@@ -20,5 +21,14 @@ const copy: Record<Screen, [string, string]> = {
 
 export function PageHeading({ screen, onCreate }: PageHeadingProps) {
   const [title, subtitle] = copy[screen]
-  return <div className="page-heading"><div><div className="eyebrow">SECRETARÍA ACADÉMICA</div><h1>{title}</h1><p>{subtitle}</p></div>{screen !== 'Resumen' && onCreate && <button className="primary-button heading-action" onClick={onCreate}><Plus size={17} /> Crear nuevo</button>}</div>
+  const section = navGroups.find((group) => group.items.some((item) => item.name === screen))?.label ?? 'Gestión académica'
+
+  return <div className="page-heading">
+    <div className="page-heading__copy">
+      <span className="eyebrow page-heading__context">{section}</span>
+      <h1>{title}</h1>
+      <p>{subtitle}</p>
+    </div>
+    {screen !== 'Resumen' && onCreate && <button className="primary-button heading-action" onClick={onCreate}><Plus size={17} /> Crear nuevo</button>}
+  </div>
 }

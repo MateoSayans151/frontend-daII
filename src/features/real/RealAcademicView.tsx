@@ -260,7 +260,6 @@ function PlanesPanel({ onNotify }: { onNotify: (value: string) => void }) {
       <div className="academic-selection-header">
         <span className="academic-selection-icon"><GraduationCap size={20} aria-hidden="true" /></span>
         <div className="academic-selection-copy">
-          <span className="academic-selection-kicker">PLANES POR CARRERA</span>
           <h2>Elegí una carrera</h2>
           <p>Buscá por nombre, código o facultad. El selector muestra su duración y el título que otorga.</p>
         </div>
