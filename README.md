@@ -37,7 +37,7 @@ npm.cmd run dev
 | Sección | API utilizada |
 | --- | --- |
 | Carreras | `/api/academica/carreras` |
-| Planes | `/api/academica/carreras/{id}/planes` y `/api/academica/planes/{id}/pdf` |
+| Planes | `/api/academica/carreras/{id}/planes` y `/api/academica/planes/{id}` |
 | Asignaturas | `/api/academica/planes/{id}/asignaturas` |
 | Correlatividades | `/api/academica/asignaturas/{id}/correlatividades`; devuelve condiciones agrupadas por tipo y cada materia correlativa con ID, código y nombre |
 | Sedes y aulas | `/api/planificacion/sedes` y rutas de aulas por sede |
@@ -49,7 +49,7 @@ npm.cmd run dev
 | Regularidad | `GET /api/regularidad/cursos/{cursoId}` y correlativas de la asignatura |
 
 Los formularios anticipan las reglas del backend y bloquean el doble envío. La pantalla de
-planes permite descargar el PDF y sólo habilita `Activo` si el plan tiene asignaturas y no
+planes sólo habilita `Activo` si el plan tiene asignaturas y no
 es de un año futuro; así, un plan futuro queda como borrador. Los selectores de cursos y
 asignaciones ofrecen sólo asignaturas de planes activos, y los de cursos sólo períodos no
 finalizados. El detalle de un curso muestra únicamente los cambios de estado permitidos.

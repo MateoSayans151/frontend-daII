@@ -1,4 +1,4 @@
-import { Check, FilePdf, GraduationCap, PencilSimple, Plus, Trash, WarningCircle, X } from '@phosphor-icons/react'
+import { Check, GraduationCap, PencilSimple, Plus, Trash, WarningCircle, X } from '@phosphor-icons/react'
 import { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../../app/hooks'
 import { CalendarDatePicker } from '../../components/ui/CalendarDatePicker'
@@ -18,8 +18,6 @@ import {
   eliminarPlanDeEstudio,
   listarPlanesDeEstudio,
 } from '../../services/planesEstudio/planesEstudioSlice'
-import { planesEstudioService } from '../../services/planesEstudio/planesEstudioService'
-import { extraerMensajeError } from '../../services/api/erroresApi'
 import { crearAsignatura, listarAsignaturas } from '../../services/asignaturas/asignaturasSlice'
 import {
   crearCorrelatividad,
@@ -285,20 +283,6 @@ function PlanesPanel({ onNotify }: { onNotify: (value: string) => void }) {
     dispatch(listarCarreras())
   }
 
-  const descargarPdf = async (plan: PlanDeEstudio) => {
-    try {
-      const pdf = await planesEstudioService.descargarPdf(plan.id)
-      const url = URL.createObjectURL(pdf)
-      const enlace = document.createElement('a')
-      enlace.href = url
-      enlace.download = `plan-estudios-${plan.codigo}.pdf`
-      enlace.click()
-      URL.revokeObjectURL(url)
-    } catch (error) {
-      onNotify(extraerMensajeError(error, 'No se pudo descargar el plan de estudio'))
-    }
-  }
-
   return <>
     {carreras.error && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {carreras.error}</div>}
     <section className="panel academic-selection-panel">
@@ -380,7 +364,6 @@ function PlanesPanel({ onNotify }: { onNotify: (value: string) => void }) {
                       <td><span className={`status ${estadoPlanClase[plan.estado]}`}><i />{estadoPlanEtiqueta[plan.estado]}</span></td>
                       <td>
                         <button className="row-action" onClick={() => abrirEdicion(plan)} aria-label={`Editar ${plan.nombre}`}><PencilSimple size={17} /></button>
-                        <button className="row-action" onClick={() => descargarPdf(plan)} aria-label={`Descargar PDF de ${plan.nombre}`}><FilePdf size={17} /></button>
                         {plan.estado === 'PLANIFICADO' && <button className="row-action danger" onClick={() => eliminar(plan.id)} aria-label={`Eliminar ${plan.nombre}`}><Trash size={17} /></button>}
                       </td>
                     </tr>
