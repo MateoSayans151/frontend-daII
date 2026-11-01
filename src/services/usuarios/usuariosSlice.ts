@@ -11,6 +11,15 @@ interface EstadoUsuario {
   error: string | null
 }
 
+const SIN_PERMISO = 'Tu cuenta no tiene permisos para usar el portal administrativo.'
+
+// El backend autentica a cualquier usuario activo, pero el portal sólo sirve a roles administrativos.
+async function exigirPermisoAdministrativo(usuario: Usuario) {
+  if (usuario.permiso === 'ADMINISTRATIVO') return true
+  await usuariosService.logout().catch(() => undefined)
+  return false
+}
+
 const estadoInicial: EstadoUsuario = {
   actual: null,
   verificandoSesion: true,
@@ -22,7 +31,9 @@ export const iniciarSesion = createAsyncThunk<Usuario, LoginUsuario, { rejectVal
   'usuarios/iniciarSesion',
   async (datos, { rejectWithValue }) => {
     try {
-      return await usuariosService.login(datos)
+      const usuario = await usuariosService.login(datos)
+      if (!(await exigirPermisoAdministrativo(usuario))) return rejectWithValue(SIN_PERMISO)
+      return usuario
     } catch (error) {
       if (isAxiosError(error) && [401, 403].includes(error.response?.status ?? 0)) {
         return rejectWithValue('El email o la contraseña son incorrectos.')
@@ -50,7 +61,9 @@ export const obtenerUsuarioActual = createAsyncThunk<Usuario, void, { rejectValu
   'usuarios/obtenerActual',
   async (_, { rejectWithValue }) => {
     try {
-      return await usuariosService.actual()
+      const usuario = await usuariosService.actual()
+      if (!(await exigirPermisoAdministrativo(usuario))) return rejectWithValue(SIN_PERMISO)
+      return usuario
     } catch (error) {
       return rejectWithValue(extraerMensajeError(error))
     }
@@ -63,6 +76,10 @@ const usuariosSlice = createSlice({
   reducers: {
     limpiarErrorUsuario: (state) => {
       state.error = null
+    },
+    sesionExpirada: (state) => {
+      state.actual = null
+      state.error = 'Tu sesión venció. Volvé a iniciar sesión.'
     },
   },
   extraReducers: (builder) => {
@@ -82,6 +99,10 @@ const usuariosSlice = createSlice({
 
       .addCase(cerrarSesion.fulfilled, (state) => {
         state.actual = null
+        state.error = null
+      })
+      .addCase(cerrarSesion.rejected, (state) => {
+        state.actual = null
       })
 
       .addCase(obtenerUsuarioActual.pending, (state) => {
@@ -100,5 +121,5 @@ const usuariosSlice = createSlice({
   },
 })
 
-export const { limpiarErrorUsuario } = usuariosSlice.actions
+export const { limpiarErrorUsuario, sesionExpirada } = usuariosSlice.actions
 export default usuariosSlice.reducer

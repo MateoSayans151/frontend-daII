@@ -11,14 +11,25 @@ export interface AulaCatalogo extends Aula {
   sedeNombre: string
 }
 
-async function listarTodasLasAsignaturas(): Promise<Asignatura[]> {
+// planificable: sólo un plan activo de una carrera vigente admite cursos y reservas de aula.
+export interface AsignaturaCatalogo extends Asignatura {
+  planNombre: string
+  planificable: boolean
+}
+
+async function listarTodasLasAsignaturas(): Promise<AsignaturaCatalogo[]> {
   const carreras = await carrerasService.listar()
   const planes = (await Promise.all(
-    carreras.map((carrera) => planesEstudioService.listar(carrera.id)),
+    carreras.map(async (carrera) => (await planesEstudioService.listar(carrera.id))
+      .map((plan) => ({ plan, carrera }))),
   )).flat()
 
   return (await Promise.all(
-    planes.map((plan) => asignaturasService.listar(plan.id)),
+    planes.map(async ({ plan, carrera }) => (await asignaturasService.listar(plan.id)).map((asignatura) => ({
+      ...asignatura,
+      planNombre: plan.nombre,
+      planificable: plan.estado === 'ACTIVO' && carrera.estado !== 'INACTIVA',
+    }))),
   )).flat()
 }
 
@@ -44,7 +55,7 @@ async function listarTodasLasAulas(sedes: Sede[]): Promise<{
 }
 
 export interface CatalogosPlanificacion {
-  asignaturas: Asignatura[]
+  asignaturas: AsignaturaCatalogo[]
   periodos: PeriodoAcademico[]
   sedes: Sede[]
   aulas: AulaCatalogo[]

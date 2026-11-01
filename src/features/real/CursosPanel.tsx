@@ -7,7 +7,7 @@ import { EmptyState } from '../../components/ui/EmptyState'
 import { SurfaceSkeleton } from '../../components/ui/SurfaceSkeleton'
 import { Toolbar } from '../../components/ui/Toolbar'
 import { extraerMensajeError } from '../../services/api/erroresApi'
-import { catalogosService, type AulaCatalogo } from '../../services/catalogos/catalogosService'
+import { catalogosService, type AsignaturaCatalogo, type AulaCatalogo } from '../../services/catalogos/catalogosService'
 import {
   actualizarEstadoCurso,
   actualizarHorarioCurso,
@@ -17,7 +17,7 @@ import {
   obtenerCurso,
 } from '../../services/cursos/cursosSlice'
 import { regularidadService } from '../../services/regularidad/regularidadService'
-import type { Asignatura, CursoDetalle, CrearCurso, PeriodoAcademico, Sede } from '../../types/api'
+import type { CursoDetalle, CrearCurso, PeriodoAcademico, Sede } from '../../types/api'
 import {
   CODIGO_ACADEMICO_MENSAJE,
   esCodigoAcademicoValido,
@@ -64,6 +64,28 @@ const estadosCurso = [
   { value: 'CANCELADO', label: 'Cancelado' },
 ]
 
+const transicionesEstado: Record<string, string[]> = {
+  PLANIFICADO: ['EN_CURSO', 'CANCELADO'],
+  EN_CURSO: ['FINALIZADO', 'CANCELADO'],
+  FINALIZADO: [],
+  CANCELADO: [],
+}
+
+function fechaHoy() {
+  const hoy = new Date()
+  return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`
+}
+
+// Mismas franjas que valida el backend para la hora de inicio de cada turno.
+function validarHorarioTurno(turno: string | null, horaInicio: string, horaFin: string) {
+  if (horaInicio >= horaFin) return 'La hora de fin debe ser posterior a la de inicio.'
+  if (horaInicio < '07:00' || horaFin > '23:00') return 'El horario debe estar entre las 07:00 y las 23:00.'
+  if (turno === 'MAÑANA' && horaInicio >= '13:00') return 'El turno mañana debe comenzar antes de las 13:00.'
+  if (turno === 'TARDE' && (horaInicio < '13:00' || horaInicio >= '18:00')) return 'El turno tarde debe comenzar entre las 13:00 y las 18:00.'
+  if (turno === 'NOCHE' && horaInicio < '18:00') return 'El turno noche debe comenzar desde las 18:00.'
+  return null
+}
+
 function fechaBreve(fecha: string) {
   const [anio, mes, dia] = fecha.slice(0, 10).split('-').map(Number)
   if (!anio || !mes || !dia) return fecha
@@ -83,8 +105,9 @@ export function CursosPanel({ query, setQuery, onNotify }: { query: string; setQ
   const [formAbierto, setFormAbierto] = useState(false)
   const [valores, setValores] = useState<CrearCurso>(cursoVacio)
   const [cursoAbiertoId, setCursoAbiertoId] = useState<number | null>(null)
+  const [creando, setCreando] = useState(false)
   const [catalogos, setCatalogos] = useState<{
-    asignaturas: Asignatura[]
+    asignaturas: AsignaturaCatalogo[]
     periodos: PeriodoAcademico[]
     sedes: Sede[]
     aulas: AulaCatalogo[]
@@ -184,29 +207,45 @@ export function CursosPanel({ query, setQuery, onNotify }: { query: string; setQ
       onNotify('Completá todos los campos del curso con valores válidos.')
       return
     }
-    if (valores.fechaInicio > valores.fechaFin) {
-      onNotify('La fecha de inicio no puede ser posterior a la fecha de fin.')
+    if (valores.fechaInicio >= valores.fechaFin) {
+      onNotify('La fecha de fin debe ser posterior a la fecha de inicio.')
       return
     }
-    if (valores.horaInicio >= valores.horaFin) {
-      onNotify('La hora de fin debe ser posterior a la de inicio.')
+    const periodoElegido = catalogos.periodos.find((periodo) => periodo.id === valores.periodoId)
+    if (periodoElegido && (valores.fechaInicio < periodoElegido.fechaInicio || valores.fechaFin > periodoElegido.fechaFin)) {
+      onNotify('Las fechas del curso deben estar dentro del período elegido.')
       return
     }
+    const errorHorario = validarHorarioTurno(valores.turno, valores.horaInicio, valores.horaFin)
+    if (errorHorario) {
+      onNotify(errorHorario)
+      return
+    }
+    const aulaElegida = catalogos.aulas.find((aula) => aula.id === valores.aulaId)
+    if (aulaElegida && valores.cupoMaximo > aulaElegida.capacidadMaxima) {
+      onNotify(`El cupo no puede superar la capacidad del aula (${aulaElegida.capacidadMaxima}).`)
+      return
+    }
+    if (creando) return
+    setCreando(true)
     const resultado = await dispatch(crearCurso(valores))
+    setCreando(false)
     if (crearCurso.fulfilled.match(resultado)) {
       onNotify('Curso creado correctamente')
       setValores(cursoVacio)
       setFormAbierto(false)
       dispatch(listarCursos(filtroPeriodo))
+    } else {
+      onNotify(resultado.payload ?? 'No se pudo crear el curso')
     }
   }
 
   const aulasDeSede = catalogos.aulas.filter((aula) => aula.sedeId === valores.sedeId)
-  const opcionesAsignatura: AcademicSelectOption[] = catalogos.asignaturas.map((asignatura) => ({
+  const opcionesAsignatura: AcademicSelectOption[] = catalogos.asignaturas.filter((asignatura) => asignatura.planificable).map((asignatura) => ({
     value: String(asignatura.id), label: asignatura.nombre, code: asignatura.codigo,
-    description: `Año ${asignatura.anio} · ${asignatura.creditos} créditos`,
+    description: `${asignatura.planNombre} · Año ${asignatura.anio} · ${asignatura.creditos} créditos`,
   }))
-  const opcionesPeriodo: AcademicSelectOption[] = catalogos.periodos.map((periodo) => ({
+  const opcionesPeriodo: AcademicSelectOption[] = catalogos.periodos.filter((periodo) => periodo.fechaFin >= fechaHoy()).map((periodo) => ({
     value: String(periodo.id), label: `${periodo.numero}.º cuatrimestre ${periodo.anio}`,
     meta: `${periodo.fechaInicio} – ${periodo.fechaFin}`,
   }))
@@ -228,6 +267,7 @@ export function CursosPanel({ query, setQuery, onNotify }: { query: string; setQ
           onClick={() => {
             setCursoAbiertoId(null)
             dispatch(limpiarCursoSeleccionado())
+            dispatch(listarCursos(filtroPeriodo))
           }}
         >
           <ArrowLeft size={16} /> Volver a cursos
@@ -295,7 +335,10 @@ export function CursosPanel({ query, setQuery, onNotify }: { query: string; setQ
               <input required maxLength={8} value={valores.codigo} onChange={(event) => setValores({ ...valores, codigo: normalizarCodigoAcademico(event.target.value) })} placeholder="Ej. ARQ1-001" pattern="[A-Z]{3}[0-9]?-[0-9]{3}" title={CODIGO_ACADEMICO_MENSAJE} />
             </label>
             <AcademicSelect label="Asignatura" value={String(valores.asignaturaId || '')} options={opcionesAsignatura} onChange={(value) => setValores({ ...valores, asignaturaId: Number(value) })} placeholder="Seleccioná una asignatura" searchPlaceholder="Buscar asignatura por nombre o código..." emptyMessage="No hay asignaturas disponibles." loading={cargandoCatalogos} disabled={!cargandoCatalogos && opcionesAsignatura.length === 0} />
-            <AcademicSelect label="Período" value={String(valores.periodoId || '')} options={opcionesPeriodo} onChange={(value) => setValores({ ...valores, periodoId: Number(value) })} placeholder="Seleccioná un período" searchPlaceholder="Buscar período..." emptyMessage="No hay períodos disponibles." loading={cargandoCatalogos} disabled={!cargandoCatalogos && opcionesPeriodo.length === 0} />
+            <AcademicSelect label="Período" value={String(valores.periodoId || '')} options={opcionesPeriodo} onChange={(value) => {
+              const periodo = catalogos.periodos.find((item) => item.id === Number(value))
+              setValores({ ...valores, periodoId: Number(value), fechaInicio: periodo?.fechaInicio ?? valores.fechaInicio, fechaFin: periodo?.fechaFin ?? valores.fechaFin })
+            }} placeholder="Seleccioná un período" searchPlaceholder="Buscar período..." emptyMessage="No hay períodos vigentes o futuros." loading={cargandoCatalogos} disabled={!cargandoCatalogos && opcionesPeriodo.length === 0} />
             <AcademicSelect label="Sede" value={String(valores.sedeId || '')} options={opcionesSede} onChange={(value) => setValores({ ...valores, sedeId: Number(value), aulaId: 0 })} placeholder="Seleccioná una sede" searchPlaceholder="Buscar sede..." emptyMessage="No hay sedes disponibles." loading={cargandoCatalogos} disabled={!cargandoCatalogos && opcionesSede.length === 0} />
             <label>
               Modalidad
@@ -344,7 +387,7 @@ export function CursosPanel({ query, setQuery, onNotify }: { query: string; setQ
               <input type="number" min="0" max="10" step="0.01" value={valores.promedioMinimo} onChange={(event) => setValores({ ...valores, promedioMinimo: Number(event.target.value) })} />
             </label>
           </div>
-          <button className="primary-button" type="button" onClick={crear} disabled={cargando || cargandoCatalogos}><Check size={16} /> {cargando ? 'Guardando...' : 'Guardar curso'}</button>
+          <button className="primary-button" type="button" onClick={crear} disabled={creando || cargandoCatalogos}><Check size={16} /> {creando ? 'Guardando...' : 'Guardar curso'}</button>
         </article>
       )}
       {cargando && rows.length === 0 ? <SurfaceSkeleton label="cursos" /> : !cargando && rows.length === 0 ? (
@@ -396,7 +439,7 @@ function DetalleCurso({
   onRefresh,
 }: {
   curso: CursoDetalle
-  catalogos: { asignaturas: Asignatura[]; periodos: PeriodoAcademico[]; sedes: Sede[] }
+  catalogos: { asignaturas: AsignaturaCatalogo[]; periodos: PeriodoAcademico[]; sedes: Sede[] }
   aulas: AulaCatalogo[]
   cargandoAulas: boolean
   errorAulas: string
@@ -423,10 +466,17 @@ function DetalleCurso({
   const aulaActualDisponible = aulasDeSede.some((aula) => aula.id === horario.aulaId)
   const mostrarAulaActualSinVerificar = horario.aulaId > 0 && !aulaActualDisponible
   const aulaActualAusente = !cargandoAulas && mostrarAulaActualSinVerificar
+  const estadosPosibles = estadosCurso.filter((opcion) => opcion.value === curso.estado
+    || transicionesEstado[curso.estado]?.includes(opcion.value))
+  const cursoCerrado = !transicionesEstado[curso.estado]?.length
 
   const guardarEstado = async () => {
     if (!estado.trim()) {
       onNotify('Ingresá el estado del curso.')
+      return
+    }
+    if (estado === 'EN_CURSO' && curso.fechaInicio > fechaHoy()) {
+      onNotify('El curso no puede comenzar antes de su fecha de inicio.')
       return
     }
     const action = await dispatch(actualizarEstadoCurso({ id: curso.id, estado }))
@@ -440,6 +490,11 @@ function DetalleCurso({
     if (!Number.isInteger(horario.aulaId) || horario.aulaId <= 0 || !horario.diaSemana ||
         !horario.horaInicio || !horario.horaFin || horario.horaInicio >= horario.horaFin) {
       onNotify('Completá un día, aula y rango horario válidos.')
+      return
+    }
+    const errorHorario = validarHorarioTurno(curso.turno, horario.horaInicio, horario.horaFin)
+    if (errorHorario) {
+      onNotify(errorHorario)
       return
     }
     if (aulaActualAusente && horario.aulaId !== curso.aulaId) {
@@ -490,9 +545,10 @@ function DetalleCurso({
         </div>
         <div className="form-grid course-detail__section-form">
           <label>Estado
-            <select value={estado} onChange={(event) => setEstado(event.target.value)}>
-              {estadosCurso.map((opcion) => <option key={opcion.value} value={opcion.value}>{opcion.label}</option>)}
+            <select value={estado} disabled={cursoCerrado} onChange={(event) => setEstado(event.target.value)}>
+              {estadosPosibles.map((opcion) => <option key={opcion.value} value={opcion.value}>{opcion.label}</option>)}
             </select>
+            {cursoCerrado && <small>Un curso finalizado o cancelado no se puede reabrir ni modificar.</small>}
           </label>
         </div>
         <button className="secondary-button" type="button" onClick={guardarEstado} disabled={estado === curso.estado}>Actualizar estado</button>
@@ -530,7 +586,7 @@ function DetalleCurso({
           <label>Hora de fin<input type="time" value={horario.horaFin} onChange={(event) => setHorario({ ...horario, horaFin: event.target.value })} /></label>
         </div>
         {errorAulas && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {errorAulas}</div>}
-        <button className="secondary-button" type="button" onClick={guardarHorario} disabled={cargandoAulas}>Guardar horario</button>
+        <button className="secondary-button" type="button" onClick={guardarHorario} disabled={cargandoAulas || cursoCerrado}>Guardar horario</button>
       </article>
       <article className="panel course-detail__section">
         <h2>Condiciones para regularizar</h2>

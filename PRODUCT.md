@@ -28,7 +28,7 @@ El portal se usa desde computadoras del equipo administrativo. Las pantallas tra
 
 ## Capabilities and Constraints
 
-- Gestionar carreras, planes de estudio, asignaturas y correlatividades.
+- Gestionar carreras, planes de estudio, asignaturas y correlatividades; un plan futuro permanece como borrador hasta su año de vigencia.
 - Crear sedes y aulas, registrar capacidades y consultar agendas.
 - Asignar aulas a cursos evitando superposiciones horarias.
 - Definir fechas de inicio y fin de cuatrimestres y turnos de exámenes finales.

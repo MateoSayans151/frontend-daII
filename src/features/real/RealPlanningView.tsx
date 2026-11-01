@@ -27,6 +27,7 @@ function SedesYAulasPanel({ query, setQuery, onNotify }: { query: string; setQue
   const [nuevaSede, setNuevaSede] = useState({ nombre: '', direccion: '' })
   const [formAula, setFormAula] = useState(false)
   const [nuevaAula, setNuevaAula] = useState({ codigo: '', nombre: '', capacidadMaxima: '' })
+  const [guardando, setGuardando] = useState(false)
 
   useEffect(() => { dispatch(listarSedes()) }, [dispatch])
   useEffect(() => { if (sedeId) dispatch(listarAulas(sedeId)) }, [dispatch, sedeId])
@@ -41,7 +42,10 @@ function SedesYAulasPanel({ query, setQuery, onNotify }: { query: string; setQue
       onNotify('Ingresá nombre y dirección para la sede.')
       return
     }
+    if (guardando) return
+    setGuardando(true)
     const resultado = await dispatch(crearSede({ nombre, direccion }))
+    setGuardando(false)
     if (crearSede.fulfilled.match(resultado)) {
       onNotify('Sede creada correctamente')
       setNuevaSede({ nombre: '', direccion: '' })
@@ -56,10 +60,13 @@ function SedesYAulasPanel({ query, setQuery, onNotify }: { query: string; setQue
       onNotify('Seleccioná una capacidad máxima entre 1 y 100.')
       return
     }
+    if (guardando) return
+    setGuardando(true)
     const resultado = await dispatch(crearAula({ sedeId, datos: {
       codigo: nuevaAula.codigo.trim(), capacidadMaxima,
       nombre: nuevaAula.nombre.trim(),
     } }))
+    setGuardando(false)
     if (crearAula.fulfilled.match(resultado)) {
       onNotify('Aula creada correctamente')
       setNuevaAula({ codigo: '', nombre: '', capacidadMaxima: '' })
@@ -100,6 +107,7 @@ function SedesYAulasPanel({ query, setQuery, onNotify }: { query: string; setQue
         <div className="form-grid">
           <label>Nombre
             <input
+              maxLength={255}
               value={nuevaSede.nombre}
               onChange={(event) => setNuevaSede({ ...nuevaSede, nombre: event.target.value })}
               placeholder="Ej. Sede Córdoba"
@@ -107,13 +115,14 @@ function SedesYAulasPanel({ query, setQuery, onNotify }: { query: string; setQue
           </label>
           <label>Dirección
             <input
+              maxLength={255}
               value={nuevaSede.direccion}
               onChange={(event) => setNuevaSede({ ...nuevaSede, direccion: event.target.value })}
               placeholder="Ej. Av. San Martín 123, CABA"
             />
           </label>
         </div>
-        <button className="primary-button" type="button" onClick={crearNuevaSede} disabled={sedes.cargando || !nuevaSede.nombre.trim() || !nuevaSede.direccion.trim()}><Check size={16} /> Guardar</button>
+        <button className="primary-button" type="button" onClick={crearNuevaSede} disabled={guardando || sedes.cargando || !nuevaSede.nombre.trim() || !nuevaSede.direccion.trim()}><Check size={16} /> Guardar</button>
       </article>
     )}
 
@@ -126,14 +135,14 @@ function SedesYAulasPanel({ query, setQuery, onNotify }: { query: string; setQue
           {formAula && (
             <article className="panel planning-form-panel">
               <div className="form-grid">
-                <label>Código<input required maxLength={80} value={nuevaAula.codigo} onChange={(e) => setNuevaAula({ ...nuevaAula, codigo: e.target.value })} placeholder="Ej. Aula 204" /></label>
+                <label>Código<input required maxLength={30} value={nuevaAula.codigo} onChange={(e) => setNuevaAula({ ...nuevaAula, codigo: e.target.value })} placeholder="Ej. Aula 204" /></label>
                 <label>Edificio (opcional)<input maxLength={255} value={nuevaAula.nombre} onChange={(e) => setNuevaAula({ ...nuevaAula, nombre: e.target.value })} placeholder="Ej. Aula de informática" /></label>
                 <label>Capacidad máxima
                   <input type="number" inputMode="numeric" min="1" max="100" step="1" required value={nuevaAula.capacidadMaxima} onChange={(e) => setNuevaAula({ ...nuevaAula, capacidadMaxima: e.target.value })} />
                   <small>Entre 1 y 100 personas.</small>
                 </label>
               </div>
-              <button className="primary-button" type="button" onClick={crearNuevaAula} disabled={aulas.cargando || !nuevaAula.codigo.trim() || !nuevaAula.capacidadMaxima}><Check size={16} /> Guardar</button>
+              <button className="primary-button" type="button" onClick={crearNuevaAula} disabled={guardando || aulas.cargando || !nuevaAula.codigo.trim() || !nuevaAula.capacidadMaxima}><Check size={16} /> Guardar</button>
             </article>
           )}
           {aulas.cargando && aulasVisibles.length === 0 ? <SurfaceSkeleton label="aulas" /> : (

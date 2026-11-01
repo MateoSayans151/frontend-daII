@@ -5,12 +5,14 @@ import { estadoListaInicial, type EstadoLista } from '../api/estadoLista'
 import type { CondicionCorrelatividad, CondicionesRegularidad, Correlatividad, CrearCorrelatividad } from '../../types/api'
 
 interface EstadoCorrelatividades extends EstadoLista<CondicionCorrelatividad> {
+  errorAlta: string | null
   asignaturaId: number | null
   solicitudActivaId: string | null
 }
 
 const estadoInicial: EstadoCorrelatividades = {
   ...estadoListaInicial<CondicionCorrelatividad>(),
+  errorAlta: null,
   asignaturaId: null,
   solicitudActivaId: null,
 }
@@ -47,6 +49,7 @@ const correlatividadesSlice = createSlice({
       .addCase(listarCorrelatividades.pending, (state, action) => {
         state.cargando = true
         state.error = null
+        state.errorAlta = null
         state.items = []
         state.asignaturaId = action.meta.arg
         state.solicitudActivaId = action.meta.requestId
@@ -65,12 +68,12 @@ const correlatividadesSlice = createSlice({
         state.error = action.payload ?? 'No se pudieron obtener las correlatividades'
       })
 
-      .addCase(crearCorrelatividad.fulfilled, (state, action) => {
-        if (state.asignaturaId === action.meta.arg.asignaturaId) state.error = null
+      .addCase(crearCorrelatividad.pending, (state) => {
+        state.errorAlta = null
       })
       .addCase(crearCorrelatividad.rejected, (state, action) => {
         if (state.asignaturaId !== action.meta.arg.asignaturaId) return
-        state.error = action.payload ?? 'No se pudo agregar la correlatividad'
+        state.errorAlta = action.payload ?? 'No se pudo agregar la correlatividad'
       })
   },
 })

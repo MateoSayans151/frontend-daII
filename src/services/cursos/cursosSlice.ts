@@ -155,6 +155,9 @@ const cursosSlice = createSlice({
         state.cargandoDetalle = false
         state.error = action.payload ?? 'No se pudo obtener el curso'
       })
+      .addCase(crearCurso.pending, (state) => {
+        state.error = null
+      })
       .addCase(crearCurso.fulfilled, (state, action: PayloadAction<Curso>) => {
         state.items.push(action.payload)
       })

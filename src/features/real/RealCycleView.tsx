@@ -26,7 +26,7 @@ const periodoVacio = {
   inscripcionDesde: '',
   inscripcionHasta: '',
 }
-const opcionesAnio = Array.from({ length: 2100 - 2026 + 1 }, (_, index) => 2026 + index)
+const opcionesAnio = Array.from({ length: 2100 - 2000 + 1 }, (_, index) => 2000 + index)
 const meses = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
@@ -63,6 +63,7 @@ function PeriodosPanel({ query, onNotify }: { query: string; onNotify: (v: strin
   const { items, cargando, error } = useAppSelector((state) => state.periodos)
   const [formAbierto, setFormAbierto] = useState(false)
   const [valores, setValores] = useState(periodoVacio)
+  const [guardando, setGuardando] = useState(false)
 
   useEffect(() => { dispatch(listarPeriodos()) }, [dispatch])
 
@@ -89,6 +90,20 @@ function PeriodosPanel({ query, onNotify }: { query: string; onNotify: (v: strin
       onNotify('La inscripción debe cerrar antes o el mismo día del inicio del período.')
       return
     }
+    if (valores.fechaInicio.slice(0, 4) !== valores.anio) {
+      onNotify('El período debe comenzar en el año seleccionado.')
+      return
+    }
+    if (items.some((periodo) => String(periodo.anio) === valores.anio && String(periodo.numero) === valores.numero)) {
+      onNotify('Ya existe ese cuatrimestre para el año seleccionado.')
+      return
+    }
+    if (items.some((periodo) => periodo.fechaInicio <= valores.fechaFin && periodo.fechaFin >= valores.fechaInicio)) {
+      onNotify('Las fechas se superponen con otro período académico.')
+      return
+    }
+    if (guardando) return
+    setGuardando(true)
     const resultado = await dispatch(crearPeriodo({
       anio: Number(valores.anio),
       numero: Number(valores.numero),
@@ -97,6 +112,7 @@ function PeriodosPanel({ query, onNotify }: { query: string; onNotify: (v: strin
       inscripcionDesde: valores.inscripcionDesde,
       inscripcionHasta: valores.inscripcionHasta,
     }))
+    setGuardando(false)
     if (crearPeriodo.fulfilled.match(resultado)) {
       onNotify('Período creado correctamente')
       setValores(periodoVacio)
@@ -127,7 +143,7 @@ function PeriodosPanel({ query, onNotify }: { query: string; onNotify: (v: strin
           <CalendarDatePicker label="Inscripción desde" value={valores.inscripcionDesde} onChange={(inscripcionDesde) => setValores({ ...valores, inscripcionDesde })} />
           <CalendarDatePicker label="Inscripción hasta" value={valores.inscripcionHasta} onChange={(inscripcionHasta) => setValores({ ...valores, inscripcionHasta })} />
         </div>
-        <button className="primary-button" onClick={crear}><Check size={16} /> Guardar</button>
+        <button className="primary-button" onClick={crear} disabled={guardando}><Check size={16} /> {guardando ? 'Guardando...' : 'Guardar'}</button>
       </article>
     )}
     {cargando && rows.length === 0 ? <SurfaceSkeleton label="períodos" variant="cards" rows={3} /> : rows.length === 0 ? <EmptyState query={query} /> : (
@@ -157,6 +173,7 @@ function TurnosPanel({ query, onNotify }: { query: string; onNotify: (v: string)
   const { items, cargando, error } = useAppSelector((state) => state.turnosExamen)
   const [formAbierto, setFormAbierto] = useState(false)
   const [valores, setValores] = useState(turnoVacio)
+  const [guardando, setGuardando] = useState(false)
 
   useEffect(() => { dispatch(listarTurnosExamen()) }, [dispatch])
 
@@ -183,16 +200,30 @@ function TurnosPanel({ query, onNotify }: { query: string; onNotify: (v: string)
       onNotify('La inscripción debe finalizar en una fecha posterior a su inicio.')
       return
     }
-    if (valores.inscripcionHasta > valores.fechaInicio) {
+    if (valores.inscripcionHasta >= valores.fechaInicio) {
       onNotify('La inscripción debe cerrar antes del inicio del turno.')
       return
     }
 
     const { mes, anio, ...datosTurno } = valores
-    const resultado = await dispatch(crearTurnoExamen({
-      ...datosTurno,
-      nombre: `Turno ${mes} ${anio}`,
-    }))
+    const mesInicio = meses[Number(valores.fechaInicio.slice(5, 7)) - 1]
+    if (valores.fechaInicio.slice(0, 4) !== anio || mesInicio !== mes) {
+      onNotify('La fecha de inicio debe pertenecer al mes y año del turno.')
+      return
+    }
+    const nombre = `Turno ${mes} ${anio}`
+    if (items.some((turno) => turno.nombre.toLowerCase() === nombre.toLowerCase())) {
+      onNotify('Ya existe un turno para ese mes y año.')
+      return
+    }
+    if (items.some((turno) => turno.fechaInicio <= valores.fechaFin && turno.fechaFin >= valores.fechaInicio)) {
+      onNotify('Las fechas se superponen con otro turno de examen.')
+      return
+    }
+    if (guardando) return
+    setGuardando(true)
+    const resultado = await dispatch(crearTurnoExamen({ ...datosTurno, nombre }))
+    setGuardando(false)
     if (crearTurnoExamen.fulfilled.match(resultado)) {
       onNotify('Turno de examen creado correctamente')
       setValores(turnoVacio)
@@ -223,7 +254,7 @@ function TurnosPanel({ query, onNotify }: { query: string; onNotify: (v: string)
           <CalendarDatePicker label="Inscripción desde" value={valores.inscripcionDesde} onChange={(inscripcionDesde) => setValores({ ...valores, inscripcionDesde })} />
           <CalendarDatePicker label="Inscripción hasta" value={valores.inscripcionHasta} onChange={(inscripcionHasta) => setValores({ ...valores, inscripcionHasta })} />
         </div>
-        <button className="primary-button" onClick={crear}><Check size={16} /> Guardar</button>
+        <button className="primary-button" onClick={crear} disabled={guardando}><Check size={16} /> {guardando ? 'Guardando...' : 'Guardar'}</button>
       </article>
     )}
     {cargando && rows.length === 0 ? <SurfaceSkeleton label="turnos de examen" variant="cards" rows={3} /> : rows.length === 0 ? <EmptyState query={query} /> : (

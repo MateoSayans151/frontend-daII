@@ -45,6 +45,7 @@ const asignaturasSlice = createSlice({
         },
       )
       .addCase(listarAsignaturas.rejected, (state, action) => {
+        if (action.meta.aborted) return
         state.cargando = false
         state.error = action.payload ?? 'No se pudieron obtener las asignaturas'
       })

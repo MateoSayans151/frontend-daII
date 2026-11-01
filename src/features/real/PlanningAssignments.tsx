@@ -8,8 +8,8 @@ import { SurfaceSkeleton } from '../../components/ui/SurfaceSkeleton'
 import { Toolbar } from '../../components/ui/Toolbar'
 import { extraerMensajeError } from '../../services/api/erroresApi'
 import { crearAsignacion, limpiarAgenda, listarAsignaciones, obtenerAgendaAula } from '../../services/asignaciones/asignacionesSlice'
-import { catalogosService, type AulaCatalogo } from '../../services/catalogos/catalogosService'
-import type { Asignatura, OcupacionAula } from '../../types/api'
+import { catalogosService, type AsignaturaCatalogo, type AulaCatalogo } from '../../services/catalogos/catalogosService'
+import type { OcupacionAula } from '../../types/api'
 
 const asignacionVacia = { aulaId: '', asignaturaId: '', fecha: '', horaInicio: '', horaFin: '', cantidadEstudiantes: '' }
 const dias = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
@@ -63,7 +63,7 @@ function mostrarHora(valor: string): string {
 }
 
 function useCatalogoAsignaciones() {
-  const [asignaturas, setAsignaturas] = useState<Asignatura[]>([])
+  const [asignaturas, setAsignaturas] = useState<AsignaturaCatalogo[]>([])
   const [aulas, setAulas] = useState<AulaCatalogo[]>([])
   const [cargandoCatalogos, setCargandoCatalogos] = useState(true)
   const [errorCatalogos, setErrorCatalogos] = useState('')
@@ -89,10 +89,10 @@ function useCatalogoAsignaciones() {
   return { asignaturas, aulas, cargandoCatalogos, errorCatalogos }
 }
 
-function opcionesAsignatura(asignaturas: Asignatura[]): AcademicSelectOption[] {
-  return asignaturas.map((asignatura) => ({
+function opcionesAsignatura(asignaturas: AsignaturaCatalogo[]): AcademicSelectOption[] {
+  return asignaturas.filter((asignatura) => asignatura.planificable).map((asignatura) => ({
     value: String(asignatura.id), label: asignatura.nombre, code: asignatura.codigo,
-    description: `Año ${asignatura.anio} · ${asignatura.creditos} créditos`,
+    description: `${asignatura.planNombre} · Año ${asignatura.anio} · ${asignatura.creditos} créditos`,
   }))
 }
 
@@ -134,6 +134,10 @@ export function AsignacionesPanel({ onNotify, query, setQuery }: { onNotify: (v:
     }
     if (!valores.fecha || !valores.horaInicio || !valores.horaFin) {
       onNotify('Completá la fecha y las horas de inicio y de fin.')
+      return
+    }
+    if (valores.fecha < fechaLocal(new Date())) {
+      onNotify('No se puede reservar un aula en una fecha pasada.')
       return
     }
     if (

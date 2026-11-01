@@ -1,5 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit'
-import usuariosReducer, { obtenerUsuarioActual } from '../services/usuarios/usuariosSlice'
+import usuariosReducer, { obtenerUsuarioActual, sesionExpirada } from '../services/usuarios/usuariosSlice'
+import { registrarSesionExpirada } from '../services/api/authAxios'
 import carrerasReducer from '../services/carreras/carrerasSlice'
 import planesEstudioReducer from '../services/planesEstudio/planesEstudioSlice'
 import asignaturasReducer from '../services/asignaturas/asignaturasSlice'
@@ -28,6 +29,8 @@ export const store = configureStore({
     regularidad: regularidadReducer,
   },
 })
+
+registrarSesionExpirada(() => store.dispatch(sesionExpirada()))
 
 // Reconstruye la sesión local a partir de la cookie HttpOnly JSESSIONID.
 // La ruta de vista previa de Vite omite la consulta de autenticación.

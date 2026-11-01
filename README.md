@@ -7,14 +7,17 @@ Frontend React, TypeScript y Vite del módulo de Gestión Académica.
 Todas las pantallas activas consumen el backend. El modo demo, los datos de ejemplo en
 `localStorage` y las pantallas mock fueron eliminados. Una autenticación exitosa siempre
 abre `AppReal` y las altas, consultas y modificaciones se realizan mediante los servicios
-HTTP de `src/services`.
+HTTP de `src/services`. En desarrollo, la ruta `/preview` muestra el panel sin autenticar
+ni datos, para revisar la interfaz con Spring Boot apagado.
 
 La autenticación disponible hoy es la sesión local del backend:
 
 - `POST /api/auth/login` crea la sesión;
 - `GET /api/auth/me` reconstruye la sesión al recargar;
 - `POST /api/auth/logout` la invalida;
-- Axios envía la cookie `JSESSIONID` con `withCredentials`.
+- Axios envía la cookie `JSESSIONID` con `withCredentials`;
+- un `401` durante el uso vuelve al login e informa que la sesión venció;
+- una cuenta sin permiso `ADMINISTRATIVO` no entra al portal.
 
 No hay llamadas desde el frontend a rutas inexistentes como `/api/usuarios`.
 
@@ -45,6 +48,12 @@ npm.cmd run dev
 | Turnos | `/api/planificacion/turnos-examen` |
 | Regularidad | `GET /api/regularidad/cursos/{cursoId}` y correlativas de la asignatura |
 
+Los formularios anticipan las reglas del backend y bloquean el doble envío. La pantalla de
+planes permite descargar el PDF y sólo habilita `Activo` si el plan tiene asignaturas y no
+es de un año futuro; así, un plan futuro queda como borrador. Los selectores de cursos y
+asignaciones ofrecen sólo asignaturas de planes activos, y los de cursos sólo períodos no
+finalizados. El detalle de un curso muestra únicamente los cambios de estado permitidos.
+
 La agenda selecciona un aula, consulta un rango de 42 días para cubrir el mes visible y
 muestra las reservas del día elegido.
 
@@ -58,7 +67,8 @@ Regularidad sólo solicita elegir el curso: no pide un ID de alumno ni valores o
 y combina los mínimos persistidos con las correlativas de la asignatura.
 
 La pantalla de correlatividades cancela las consultas anteriores al cambiar de
-asignatura, ignora respuestas tardías y no ofrece materias que ya están configuradas.
+asignatura, ignora respuestas tardías y no ofrece materias ya configuradas ni de años
+posteriores. Un rechazo al agregar, como un ciclo, se muestra sin bloquear la pantalla.
 
 ## Estructura
 

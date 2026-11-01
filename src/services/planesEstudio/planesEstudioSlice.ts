@@ -71,6 +71,7 @@ const planesEstudioSlice = createSlice({
         },
       )
       .addCase(listarPlanesDeEstudio.rejected, (state, action) => {
+        if (action.meta.aborted) return
         state.cargando = false
         state.error = action.payload ?? 'No se pudieron obtener los planes de estudio'
       })

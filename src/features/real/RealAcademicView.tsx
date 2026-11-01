@@ -1,4 +1,4 @@
-import { Check, GraduationCap, PencilSimple, Plus, Trash, WarningCircle, X } from '@phosphor-icons/react'
+import { Check, FilePdf, GraduationCap, PencilSimple, Plus, Trash, WarningCircle, X } from '@phosphor-icons/react'
 import { useEffect, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../../app/hooks'
 import { CalendarDatePicker } from '../../components/ui/CalendarDatePicker'
@@ -18,6 +18,8 @@ import {
   eliminarPlanDeEstudio,
   listarPlanesDeEstudio,
 } from '../../services/planesEstudio/planesEstudioSlice'
+import { planesEstudioService } from '../../services/planesEstudio/planesEstudioService'
+import { extraerMensajeError } from '../../services/api/erroresApi'
 import { crearAsignatura, listarAsignaturas } from '../../services/asignaturas/asignaturasSlice'
 import {
   crearCorrelatividad,
@@ -82,13 +84,15 @@ export function RealAcademicView({ screen, query, setQuery, onNotify }: Props) {
 }
 
 const carreraVacia: CrearCarrera = { codigo: '', nombre: '', facultad: '', titulo: '' }
-const opcionesAnioCalendario = Array.from({ length: 2100 - 2026 + 1 }, (_, index) => 2026 + index)
+const opcionesAnioCalendario = Array.from({ length: 2100 - 2000 + 1 }, (_, index) => 2000 + index)
+const anioActual = new Date().getFullYear()
 
 function CarrerasPanel({ query, setQuery, onNotify }: { query: string; setQuery: (value: string) => void; onNotify: (value: string) => void }) {
   const dispatch = useAppDispatch()
   const { items, cargando, error } = useAppSelector((state) => state.carreras)
   const [formAbierto, setFormAbierto] = useState<'nueva' | number | null>(null)
   const [valores, setValores] = useState<CrearCarrera>(carreraVacia)
+  const [guardando, setGuardando] = useState(false)
 
   useEffect(() => {
     dispatch(listarCarreras())
@@ -107,6 +111,7 @@ function CarrerasPanel({ query, setQuery, onNotify }: { query: string; setQuery:
   }
 
   const guardar = async () => {
+    if (guardando) return
     const requerido = [valores.codigo, valores.nombre, valores.facultad, valores.titulo]
     if (requerido.some((valor) => !valor.trim())) {
       onNotify('Completá todos los campos de la carrera.')
@@ -116,8 +121,10 @@ function CarrerasPanel({ query, setQuery, onNotify }: { query: string; setQuery:
       onNotify(CODIGO_ACADEMICO_MENSAJE)
       return
     }
+    setGuardando(true)
     if (formAbierto === 'nueva') {
       const resultado = await dispatch(crearCarrera(valores))
+      setGuardando(false)
       if (crearCarrera.fulfilled.match(resultado)) {
         onNotify('Carrera creada correctamente')
         setFormAbierto(null)
@@ -125,6 +132,7 @@ function CarrerasPanel({ query, setQuery, onNotify }: { query: string; setQuery:
       return
     }
     const resultado = await dispatch(actualizarCarrera({ id: formAbierto as number, datos: valores }))
+    setGuardando(false)
     if (actualizarCarrera.fulfilled.match(resultado)) {
       onNotify('Carrera actualizada')
       setFormAbierto(null)
@@ -155,7 +163,7 @@ function CarrerasPanel({ query, setQuery, onNotify }: { query: string; setQuery:
           </div>
           <label>Título que otorga<input required maxLength={120} value={valores.titulo} onChange={(e) => setValores({ ...valores, titulo: e.target.value })} placeholder="Ej. Ingeniero/a en Informática" /></label>
         </div>
-        <button className="primary-button" onClick={guardar}><Check size={16} /> Guardar</button>
+        <button className="primary-button" onClick={guardar} disabled={guardando}><Check size={16} /> {guardando ? 'Guardando...' : 'Guardar'}</button>
       </article>
     )}
 
@@ -170,7 +178,7 @@ function CarrerasPanel({ query, setQuery, onNotify }: { query: string; setQuery:
                 <td><span className="code">{carrera.codigo}</span></td>
                 <td><strong>{carrera.nombre}</strong><small>{carrera.titulo} · {carrera.duracion}</small></td>
                 <td>{carrera.facultad}</td>
-                <td><span className={`status ${estadoClase[carrera.estado]}`}><i />{carrera.estado}</span></td>
+                <td><span className={`status ${estadoClase[carrera.estado]}`}><i />{estadoEtiqueta[carrera.estado]}</span></td>
                 <td>
                   <button className="row-action" onClick={() => abrirEdicion(carrera)} aria-label={`Editar ${carrera.nombre}`}><PencilSimple size={17} /></button>
                   {carrera.estado !== 'INACTIVA' && <button className="row-action danger" onClick={() => desactivar(carrera.id)} aria-label={`Desactivar ${carrera.nombre}`}><Trash size={17} /></button>}
@@ -192,15 +200,23 @@ function PlanesPanel({ onNotify }: { onNotify: (value: string) => void }) {
   const [carreraId, setCarreraId] = useState<number | null>(null)
   const [formAbierto, setFormAbierto] = useState<'nuevo' | number | null>(null)
   const [valores, setValores] = useState({ codigo: '', nombre: '', vigenciaDesde: '', estado: 'PLANIFICADO' as EstadoPlanEstudio })
+  const [guardando, setGuardando] = useState(false)
   const carreraSeleccionada = carreras.items.find((carrera) => carrera.id === carreraId)
+  const planesCarrera = planes.items.filter((plan) => plan.carreraId === carreraId)
   const planEditado = typeof formAbierto === 'number' ? planes.items.find((plan) => plan.id === formAbierto) : undefined
+  const carreraInactiva = carreraSeleccionada?.estado === 'INACTIVA'
+  const vigenciaFutura = Number(valores.vigenciaDesde.slice(0, 4)) > anioActual
+  const planSinAsignaturas = !planEditado || planEditado.cantidadAsignaturas === 0
+  const puedeActivarse = !vigenciaFutura && !planSinAsignaturas && !carreraInactiva
 
   useEffect(() => {
     dispatch(listarCarreras())
   }, [dispatch])
 
   useEffect(() => {
-    if (carreraId) dispatch(listarPlanesDeEstudio(carreraId))
+    if (!carreraId) return
+    const solicitud = dispatch(listarPlanesDeEstudio(carreraId))
+    return () => { solicitud.abort() }
   }, [dispatch, carreraId])
 
   const cerrarFormulario = () => {
@@ -228,18 +244,32 @@ function PlanesPanel({ onNotify }: { onNotify: (value: string) => void }) {
       onNotify('Completá el año y la fecha de vigencia.')
       return
     }
+    const anioPlan = /(\d{4})$/.exec(valores.nombre)?.[1]
+    if (anioPlan && anioPlan !== valores.vigenciaDesde.slice(0, 4)) {
+      onNotify('La fecha de vigencia debe pertenecer al año del plan.')
+      return
+    }
+    if (valores.estado === 'ACTIVO' && planEditado?.estado !== 'ACTIVO' && !puedeActivarse) {
+      onNotify('Sólo se puede activar un plan vigente este año o antes y con asignaturas cargadas.')
+      return
+    }
+    if (guardando) return
+    setGuardando(true)
     if (formAbierto === 'nuevo') {
       const resultado = await dispatch(crearPlanDeEstudio({
         carreraId,
         datos: { codigo: valores.codigo, nombre: valores.nombre, vigenciaDesde: valores.vigenciaDesde },
       }))
+      setGuardando(false)
       if (!crearPlanDeEstudio.fulfilled.match(resultado)) return
       onNotify('Plan de estudio creado correctamente')
       cerrarFormulario()
+      dispatch(listarPlanesDeEstudio(carreraId))
       return
     }
     if (typeof formAbierto !== 'number') return
     const resultado = await dispatch(actualizarPlanDeEstudio({ planId: formAbierto, datos: valores }))
+    setGuardando(false)
     if (!actualizarPlanDeEstudio.fulfilled.match(resultado)) return
     onNotify('Plan de estudio actualizado')
     cerrarFormulario()
@@ -252,6 +282,21 @@ function PlanesPanel({ onNotify }: { onNotify: (value: string) => void }) {
     if (!eliminarPlanDeEstudio.fulfilled.match(resultado)) return
     onNotify('Plan de estudio eliminado')
     if (formAbierto === planId) cerrarFormulario()
+    dispatch(listarCarreras())
+  }
+
+  const descargarPdf = async (plan: PlanDeEstudio) => {
+    try {
+      const pdf = await planesEstudioService.descargarPdf(plan.id)
+      const url = URL.createObjectURL(pdf)
+      const enlace = document.createElement('a')
+      enlace.href = url
+      enlace.download = `plan-estudios-${plan.codigo}.pdf`
+      enlace.click()
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      onNotify(extraerMensajeError(error, 'No se pudo descargar el plan de estudio'))
+    }
   }
 
   return <>
@@ -296,7 +341,7 @@ function PlanesPanel({ onNotify }: { onNotify: (value: string) => void }) {
         </div>
       : <>
           {planes.error && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {planes.error}</div>}
-          <div className="list-meta"><span>{planes.items.length} planes</span><button className="text-button" onClick={formAbierto === 'nuevo' ? cerrarFormulario : abrirCreacion}>{formAbierto === 'nuevo' ? 'Cancelar' : '+ Crear plan'}</button></div>
+          <div className="list-meta"><span>{planesCarrera.length} planes</span>{carreraInactiva ? <span>Carrera inactiva: no admite planes nuevos</span> : <button className="text-button" onClick={formAbierto === 'nuevo' ? cerrarFormulario : abrirCreacion}>{formAbierto === 'nuevo' ? 'Cancelar' : '+ Crear plan'}</button>}</div>
 
           {formAbierto && (
             <article className="panel create-form-panel">
@@ -307,44 +352,50 @@ function PlanesPanel({ onNotify }: { onNotify: (value: string) => void }) {
                 {formAbierto !== 'nuevo' && <label>Estado
                   <select value={valores.estado} disabled={planEditado?.estado === 'ACTIVO'} onChange={(e) => setValores({ ...valores, estado: e.target.value as EstadoPlanEstudio })}>
                     <option value="PLANIFICADO">Planificado</option>
-                    <option value="ACTIVO">Activo</option>
+                    <option value="ACTIVO" disabled={planEditado?.estado !== 'ACTIVO' && !puedeActivarse}>Activo</option>
                   </select>
+                  {planEditado?.estado === 'ACTIVO'
+                    ? <small>Un plan activo no vuelve a planificado.</small>
+                    : vigenciaFutura
+                      ? <small>Un plan de un año futuro queda como borrador hasta que llegue su año.</small>
+                      : planSinAsignaturas && <small>Cargá asignaturas para poder activarlo.</small>}
                 </label>}
               </div>
-              <button className="primary-button" onClick={guardar}><Check size={16} /> Guardar</button>
+              <button className="primary-button" onClick={guardar} disabled={guardando}><Check size={16} /> {guardando ? 'Guardando...' : 'Guardar'}</button>
               {formAbierto !== 'nuevo' && <button className="secondary-button" onClick={cerrarFormulario}><X size={16} /> Cancelar</button>}
             </article>
           )}
 
-          {planes.cargando && planes.items.length === 0 ? <SurfaceSkeleton label="planes de estudio" /> : (
+          {planes.cargando && planesCarrera.length === 0 ? <SurfaceSkeleton label="planes de estudio" /> : (
             <div className="table-wrap">
               <table>
                 <thead><tr><th>Código</th><th>Nombre</th><th>Vigente desde</th><th>Asignaturas</th><th>Estado</th><th>Acciones</th></tr></thead>
                 <tbody>
-                  {planes.items.map((plan) => (
+                  {planesCarrera.map((plan) => (
                     <tr key={plan.id}>
                       <td><span className="code">{plan.codigo}</span></td>
                       <td><strong>{plan.nombre}</strong></td>
-                      <td>{plan.vigenciaDesde}</td>
+                      <td>{fechaLegible(plan.vigenciaDesde)}</td>
                       <td>{plan.cantidadAsignaturas}</td>
                       <td><span className={`status ${estadoPlanClase[plan.estado]}`}><i />{estadoPlanEtiqueta[plan.estado]}</span></td>
                       <td>
                         <button className="row-action" onClick={() => abrirEdicion(plan)} aria-label={`Editar ${plan.nombre}`}><PencilSimple size={17} /></button>
+                        <button className="row-action" onClick={() => descargarPdf(plan)} aria-label={`Descargar PDF de ${plan.nombre}`}><FilePdf size={17} /></button>
                         {plan.estado === 'PLANIFICADO' && <button className="row-action danger" onClick={() => eliminar(plan.id)} aria-label={`Eliminar ${plan.nombre}`}><Trash size={17} /></button>}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {!planes.cargando && planes.items.length === 0 && <EmptyState query="" />}
+              {!planes.cargando && planesCarrera.length === 0 && <EmptyState query="" />}
             </div>
           )}
         </>}
   </>
 }
 
-const opcionesCargaHoraria = [0, 68, 98, 108, 118, 168]
-const opcionesCreditos = [0, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+const opcionesCargaHoraria = [68, 98, 108, 118, 168]
+const opcionesCreditos = [4, 6, 8, 10, 12, 14, 16, 18, 20]
 const opcionesAnio = [1, 2, 3, 4, 5]
 
 function AsignaturasPanel({ onNotify }: { onNotify: (value: string) => void }) {
@@ -356,15 +407,23 @@ function AsignaturasPanel({ onNotify }: { onNotify: (value: string) => void }) {
   const [planId, setPlanId] = useState<number | null>(null)
   const [formAbierto, setFormAbierto] = useState(false)
   const [valores, setValores] = useState({ codigo: '', nombre: '', anio: '', creditos: '', cargaHoraria: '' })
+  const [guardando, setGuardando] = useState(false)
+  const planesCarrera = planes.items.filter((plan) => plan.carreraId === carreraId)
+  const asignaturasPlan = asignaturas.items.filter((asignatura) => asignatura.planId === planId)
+  const carreraInactiva = carreras.items.find((carrera) => carrera.id === carreraId)?.estado === 'INACTIVA'
 
   useEffect(() => {
     dispatch(listarCarreras())
   }, [dispatch])
   useEffect(() => {
-    if (carreraId) dispatch(listarPlanesDeEstudio(carreraId))
+    if (!carreraId) return
+    const solicitud = dispatch(listarPlanesDeEstudio(carreraId))
+    return () => { solicitud.abort() }
   }, [dispatch, carreraId])
   useEffect(() => {
-    if (planId) dispatch(listarAsignaturas(planId))
+    if (!planId) return
+    const solicitud = dispatch(listarAsignaturas(planId))
+    return () => { solicitud.abort() }
   }, [dispatch, planId])
 
   const seleccionarCarrera = (value: string) => {
@@ -394,10 +453,13 @@ function AsignaturasPanel({ onNotify }: { onNotify: (value: string) => void }) {
       onNotify('Seleccioná una carga horaria.')
       return
     }
+    if (guardando) return
+    setGuardando(true)
     const resultado = await dispatch(crearAsignatura({
       planId,
       datos: { ...valores, anio: Number(valores.anio), creditos: Number(valores.creditos), cargaHoraria: Number(valores.cargaHoraria) },
     }))
+    setGuardando(false)
     if (crearAsignatura.fulfilled.match(resultado)) {
       onNotify('Asignatura creada correctamente')
       setValores({ codigo: '', nombre: '', anio: '', creditos: '', cargaHoraria: '' })
@@ -426,7 +488,7 @@ function AsignaturasPanel({ onNotify }: { onNotify: (value: string) => void }) {
         label="Plan de estudio"
         value={planId ? String(planId) : ''}
         onChange={(value) => setPlanId(value ? Number(value) : null)}
-        options={opcionesPlan(planes.items)}
+        options={opcionesPlan(planesCarrera)}
         placeholder="Seleccioná un plan"
         searchPlaceholder="Buscar plan por nombre o código"
         helperText={carreraId ? 'Elegí el plan donde vas a crear la asignatura.' : 'Primero elegí una carrera.'}
@@ -442,13 +504,13 @@ function AsignaturasPanel({ onNotify }: { onNotify: (value: string) => void }) {
       ? <p className="muted-copy">Elegí una carrera y un plan de estudio para ver sus asignaturas.</p>
       : <>
           {asignaturas.error && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {asignaturas.error}</div>}
-          <div className="list-meta"><span>{asignaturas.items.length} asignaturas</span><button className="text-button" onClick={() => setFormAbierto((v) => !v)}>{formAbierto ? 'Cancelar' : '+ Crear asignatura'}</button></div>
+          <div className="list-meta"><span>{asignaturasPlan.length} asignaturas</span>{carreraInactiva ? <span>Carrera inactiva: no admite asignaturas nuevas</span> : <button className="text-button" onClick={() => setFormAbierto((v) => !v)}>{formAbierto ? 'Cancelar' : '+ Crear asignatura'}</button>}</div>
 
           {formAbierto && (
             <article className="panel create-form-panel">
               <div className="form-grid">
-                <label>Código<input value={valores.codigo} onChange={(e) => setValores({ ...valores, codigo: normalizarCodigoAcademico(e.target.value) })} placeholder="Ej. ARQ1-001" pattern="[A-Z]{3}[0-9]?-[0-9]{3}" title={CODIGO_ACADEMICO_MENSAJE} /></label>
-                <label>Nombre<input value={valores.nombre} onChange={(e) => setValores({ ...valores, nombre: e.target.value })} placeholder="Ej. Desarrollo de Aplicaciones II" /></label>
+                <label>Código<input value={valores.codigo} maxLength={8} onChange={(e) => setValores({ ...valores, codigo: normalizarCodigoAcademico(e.target.value) })} placeholder="Ej. ARQ1-001" pattern="[A-Z]{3}[0-9]?-[0-9]{3}" title={CODIGO_ACADEMICO_MENSAJE} /></label>
+                <label>Nombre<input value={valores.nombre} maxLength={255} onChange={(e) => setValores({ ...valores, nombre: e.target.value })} placeholder="Ej. Desarrollo de Aplicaciones II" /></label>
                 <label>Año
                   <select value={valores.anio} onChange={(e) => setValores({ ...valores, anio: e.target.value })}>
                     <option value="">Seleccioná el año</option>
@@ -468,28 +530,28 @@ function AsignaturasPanel({ onNotify }: { onNotify: (value: string) => void }) {
                   </select>
                 </label>
               </div>
-              <button className="primary-button" onClick={crear}><Check size={16} /> Guardar</button>
+              <button className="primary-button" onClick={crear} disabled={guardando}><Check size={16} /> {guardando ? 'Guardando...' : 'Guardar'}</button>
             </article>
           )}
 
-          {asignaturas.cargando && asignaturas.items.length === 0 ? <SurfaceSkeleton label="asignaturas" /> : (
+          {asignaturas.cargando && asignaturasPlan.length === 0 ? <SurfaceSkeleton label="asignaturas" /> : (
             <div className="table-wrap">
               <table>
                 <thead><tr><th>Código</th><th>Nombre</th><th>Año</th><th>Créditos</th><th>Carga horaria</th><th>Estado</th></tr></thead>
                 <tbody>
-                  {asignaturas.items.map((asignatura) => (
+                  {asignaturasPlan.map((asignatura) => (
                     <tr key={asignatura.id}>
                       <td><span className="code">{asignatura.codigo}</span></td>
                       <td><strong>{asignatura.nombre}</strong></td>
                       <td>{asignatura.anio}</td>
                       <td>{asignatura.creditos}</td>
                       <td>{asignatura.cargaHoraria} hs</td>
-                      <td><span className={`status ${estadoClase[asignatura.estado]}`}><i />{asignatura.estado}</span></td>
+                      <td><span className={`status ${estadoClase[asignatura.estado]}`}><i />{estadoEtiqueta[asignatura.estado]}</span></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {!asignaturas.cargando && asignaturas.items.length === 0 && <EmptyState query="" />}
+              {!asignaturas.cargando && asignaturasPlan.length === 0 && <EmptyState query="" />}
             </div>
           )}
         </>}
@@ -507,10 +569,21 @@ function CorrelatividadesPanel({ onNotify }: { onNotify: (value: string) => void
   const [asignaturaId, setAsignaturaId] = useState<number | null>(null)
   const [correlativaId, setCorrelativaId] = useState('')
   const [tipo, setTipo] = useState<TipoCorrelatividad>('REGULAR')
+  const [agregando, setAgregando] = useState(false)
+  const planesCarrera = planes.items.filter((plan) => plan.carreraId === carreraId)
+  const asignaturasPlan = asignaturas.items.filter((asignatura) => asignatura.planId === planId)
 
   useEffect(() => { dispatch(listarCarreras()) }, [dispatch])
-  useEffect(() => { if (carreraId) dispatch(listarPlanesDeEstudio(carreraId)) }, [dispatch, carreraId])
-  useEffect(() => { if (planId) dispatch(listarAsignaturas(planId)) }, [dispatch, planId])
+  useEffect(() => {
+    if (!carreraId) return
+    const solicitud = dispatch(listarPlanesDeEstudio(carreraId))
+    return () => { solicitud.abort() }
+  }, [dispatch, carreraId])
+  useEffect(() => {
+    if (!planId) return
+    const solicitud = dispatch(listarAsignaturas(planId))
+    return () => { solicitud.abort() }
+  }, [dispatch, planId])
   useEffect(() => {
     if (!asignaturaId) return
     const solicitud = dispatch(listarCorrelatividades(asignaturaId))
@@ -532,7 +605,10 @@ function CorrelatividadesPanel({ onNotify }: { onNotify: (value: string) => void
 
   const correlativasConfiguradas = new Set(correlatividades.items
     .flatMap((condicion) => condicion.materiasCorrelativas.map((materia) => materia.id)))
-  const opciones = asignaturas.items.filter((a) => a.id !== asignaturaId && !correlativasConfiguradas.has(a.id))
+  const asignaturaElegida = asignaturasPlan.find((a) => a.id === asignaturaId)
+  const opciones = asignaturasPlan.filter((a) => a.id !== asignaturaId
+    && !correlativasConfiguradas.has(a.id)
+    && a.anio <= (asignaturaElegida?.anio ?? a.anio))
 
   const agregar = async () => {
     if (correlatividades.cargando) {
@@ -543,7 +619,10 @@ function CorrelatividadesPanel({ onNotify }: { onNotify: (value: string) => void
       onNotify('Seleccioná una asignatura correlativa.')
       return
     }
+    if (agregando) return
+    setAgregando(true)
     const resultado = await dispatch(crearCorrelatividad({ asignaturaId, datos: { correlativaId: Number(correlativaId), tipo } }))
+    setAgregando(false)
     if (crearCorrelatividad.fulfilled.match(resultado)) {
       onNotify('Correlatividad agregada')
       setCorrelativaId('')
@@ -570,7 +649,7 @@ function CorrelatividadesPanel({ onNotify }: { onNotify: (value: string) => void
         label="Plan de estudio"
         value={planId ? String(planId) : ''}
         onChange={seleccionarPlan}
-        options={opcionesPlan(planes.items)}
+        options={opcionesPlan(planesCarrera)}
         placeholder="Seleccioná un plan"
         searchPlaceholder="Buscar plan por nombre o código"
         helperText={carreraId ? 'Seleccioná el plan con las asignaturas.' : 'Primero elegí una carrera.'}
@@ -587,7 +666,7 @@ function CorrelatividadesPanel({ onNotify }: { onNotify: (value: string) => void
           setAsignaturaId(value ? Number(value) : null)
           setCorrelativaId('')
         }}
-        options={opcionesAsignatura(asignaturas.items)}
+        options={opcionesAsignatura(asignaturasPlan)}
         placeholder="Seleccioná una asignatura"
         searchPlaceholder="Buscar asignatura por código o nombre"
         helperText={planId ? 'Elegí la materia cuyas correlatividades querés revisar.' : 'Primero elegí un plan.'}
@@ -603,6 +682,7 @@ function CorrelatividadesPanel({ onNotify }: { onNotify: (value: string) => void
       ? <p className="muted-copy">Elegí una asignatura para ver y agregar sus correlatividades.</p>
       : <article className="panel">
           {correlatividades.error && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {correlatividades.error}</div>}
+          {correlatividades.errorAlta && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {correlatividades.errorAlta}</div>}
           <div className="detail-label">CORRELATIVIDADES REQUERIDAS <span>{correlatividades.items.reduce((total, condicion) => total + condicion.materiasCorrelativas.length, 0)}</span></div>
           {correlatividades.items.length === 0 && <p className="muted-copy">No hay correlatividades configuradas.</p>}
           {correlatividades.items.flatMap((condicion) => condicion.materiasCorrelativas.map((correlativa) => {
@@ -618,7 +698,7 @@ function CorrelatividadesPanel({ onNotify }: { onNotify: (value: string) => void
               options={opcionesAsignatura(opciones)}
               placeholder="Seleccioná una asignatura"
               searchPlaceholder="Buscar correlativa por código o nombre"
-              helperText="Materia que debe regularizarse o aprobarse antes."
+              helperText="Materia del mismo año o anterior que debe regularizarse o aprobarse antes."
               emptyMessage="No hay otras asignaturas disponibles."
               noResultsMessage="No hay asignaturas que coincidan con esa búsqueda."
               loading={asignaturas.cargando || correlatividades.cargando}
@@ -638,7 +718,7 @@ function CorrelatividadesPanel({ onNotify }: { onNotify: (value: string) => void
               helperText="Definí qué condición tiene que cumplir."
               emptyMessage="No hay requisitos disponibles."
             />
-            <button className="secondary-button" onClick={agregar} disabled={correlatividades.cargando || Boolean(correlatividades.error)}><Plus size={16} /> Agregar correlativa</button>
+            <button className="secondary-button" onClick={agregar} disabled={agregando || correlatividades.cargando || Boolean(correlatividades.error)}><Plus size={16} /> Agregar correlativa</button>
           </div>
         </article>}
   </>

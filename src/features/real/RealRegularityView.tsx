@@ -124,7 +124,7 @@ export function RealRegularityView({ onNotify }: { onNotify: (value: string) => 
 
     <article className={`panel result-card ${resultado ? 'approved' : ''}`} aria-live="polite" aria-busy={cargandoCondiciones}>
       <div className="result-icon">{resultado ? <CheckCircle size={28} weight="fill" /> : <ClipboardText size={28} />}</div>
-      <h2>{resultado ? resultado.codigo : cursoId ? 'Cargando condiciones…' : 'Seleccioná un curso'}</h2>
+      <h2>{resultado ? resultado.codigo : !cursoId ? 'Seleccioná un curso' : error ? 'Condiciones no disponibles' : 'Cargando condiciones…'}</h2>
       {cargandoCondiciones && <SurfaceSkeleton label="las condiciones de regularidad" rows={2} />}
       {!cargandoCondiciones && resultado && <>
         <p className="regularity-course-name">
