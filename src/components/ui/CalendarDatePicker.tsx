@@ -26,6 +26,7 @@ export function CalendarDatePicker({
   placeholder = 'Seleccioná una fecha',
   ariaInvalid = false,
   ariaDescribedBy,
+  inline = false,
 }: {
   label: string
   value: string
@@ -33,8 +34,9 @@ export function CalendarDatePicker({
   placeholder?: string
   ariaInvalid?: boolean
   ariaDescribedBy?: string
+  inline?: boolean
 }) {
-  const [abierto, setAbierto] = useState(false)
+  const [abierto, setAbierto] = useState(inline)
   const [fechaEnFoco, setFechaEnFoco] = useState(() => value || formatearFecha(new Date()))
   const [mesVisible, setMesVisible] = useState(() => {
     const seleccionada = parsearFecha(value)
@@ -55,7 +57,7 @@ export function CalendarDatePicker({
   const semanas = Array.from({ length: 6 }, (_, index) => celdas.slice(index * 7, index * 7 + 7))
 
   useEffect(() => {
-    if (!abierto) return
+    if (!abierto || inline) return
     const cerrarAlHacerClickAfuera = (event: PointerEvent) => {
       if (!contenedor.current?.contains(event.target as Node)) setAbierto(false)
     }
@@ -71,12 +73,12 @@ export function CalendarDatePicker({
       document.removeEventListener('pointerdown', cerrarAlHacerClickAfuera)
       document.removeEventListener('keydown', cerrarConEscape)
     }
-  }, [abierto])
+  }, [abierto, inline])
 
   useEffect(() => {
-    if (!abierto) return
+    if (!abierto || inline) return
     contenedor.current?.querySelector<HTMLButtonElement>(`[data-calendar-date="${fechaEnFoco}"]`)?.focus()
-  }, [abierto, fechaEnFoco, mesVisible])
+  }, [abierto, fechaEnFoco, mesVisible, inline])
 
   const abrir = () => {
     const seleccionada = parsearFecha(value)
@@ -114,9 +116,9 @@ export function CalendarDatePicker({
   }
 
   return (
-    <div className="calendar-picker" ref={contenedor}>
+    <div className={`calendar-picker padding-boxes${inline ? ' calendar-picker--inline' : ''}`} ref={contenedor}>
       <span className="calendar-picker__label">{label}</span>
-      <button
+      {!inline && <button
         ref={disparador}
         className="calendar-picker__trigger"
         type="button"
@@ -129,9 +131,9 @@ export function CalendarDatePicker({
       >
         <span>{fechaSeleccionada ? fechaSeleccionada.toLocaleDateString('es-AR') : placeholder}</span>
         <CalendarBlank size={18} aria-hidden="true" />
-      </button>
+      </button>}
       {abierto && (
-        <div className="calendar-picker__popover" role="dialog" aria-label="Elegir fecha">
+        <div className="calendar-picker__popover" role={inline ? 'region' : 'dialog'} aria-label="Elegir fecha">
           <div className="calendar-picker__header">
             <button
               type="button"
@@ -172,8 +174,10 @@ export function CalendarDatePicker({
                       onKeyDown={(event) => manejarTecladoFecha(event, fecha)}
                       onClick={() => {
                         onChange(fechaIso)
-                        setAbierto(false)
-                        disparador.current?.focus()
+                        if (!inline) {
+                          setAbierto(false)
+                          disparador.current?.focus()
+                        }
                       }}
                     >
                       {dia}

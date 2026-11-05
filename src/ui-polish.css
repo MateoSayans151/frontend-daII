@@ -300,10 +300,28 @@ input:disabled {
   margin: 21px 0 19px;
 }
 
-.course-detail__summary > .course-detail__section-form {
+.course-detail__status-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.course-detail__status-controls > .course-detail__section-form {
   grid-template-columns: minmax(0, 320px);
-  gap: 18px;
+  flex: 0 1 320px;
+  gap: 8px;
   margin: 18px 0;
+}
+
+.course-detail__status-controls > .secondary-button {
+  margin-bottom: 18px;
+}
+
+.course-detail__schedule-column {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  min-width: 0;
 }
 
 .course-detail__section > .table-wrap {
@@ -383,6 +401,51 @@ input:disabled {
 .course-create-panel > .form-grid {
   gap: 18px 20px;
   margin: 0;
+}
+
+.course-create-fields > .course-create-column {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 18px;
+  min-width: 0;
+}
+
+.course-create-date-range {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  height: 100%;
+  gap: 12px;
+  min-width: 0;
+}
+
+.course-create-date-range > * {
+  min-width: 0;
+}
+
+.course-create-column--details {
+  grid-template-rows: auto auto minmax(320px, 1fr) auto auto;
+  align-content: stretch;
+}
+
+.course-create-column--details > label:nth-last-child(-n + 2) {
+  transform: translateY(-9px);
+}
+
+.course-create-date-range .calendar-picker--inline {
+  grid-template-rows: auto minmax(0, 1fr);
+  align-content: stretch;
+  height: 100%;
+}
+
+@media (max-width: 560px) {
+  .course-create-date-range {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+  }
+
+  .course-create-column--details { grid-template-rows: none; }
+  .course-create-date-range .calendar-picker--inline { height: auto; }
 }
 
 .course-create-panel > .primary-button {

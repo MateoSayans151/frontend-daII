@@ -1,11 +1,84 @@
 .assignment-form-grid input,
 .assignment-form-grid select,
-.assignment-form-grid .calendar-picker__trigger,
-.assignment-form-grid .assignment-time-trigger {
-  height: 42px;
-  min-height: 42px;
+.assignment-form-grid .assignment-time-trigger,
+.assignment-form-grid .academic-select__trigger {
+  height: 66px;
+  min-height: 66px;
   font-size: 12px;
   line-height: 20px;
+}
+
+.assignment-form-grid .assignment-form-times label input[type='time'] {
+  height: 44px;
+  min-height: 44px;
+  padding-block: 7px;
+}
+
+.assignment-form-grid .assignment-student-count input {
+  height: 42px;
+  min-height: 42px;
+  padding-block: 7px;
+}
+
+.assignment-form-grid {
+  grid-template-columns: minmax(min(100%, 520px), 1.5fr) minmax(280px, 1fr);
+  width: 100%;
+  min-width: 0;
+  align-items: stretch;
+}
+
+.assignment-form-column {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-width: 0;
+}
+
+.assignment-form-date-time {
+  display: grid;
+  grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
+  align-items: stretch;
+  height: 100%;
+  gap: 12px;
+  min-width: 0;
+}
+
+.assignment-form-times {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.assignment-form-grid .calendar-picker,
+.assignment-form-grid .academic-select {
+  align-content: start;
+  min-width: 0;
+  width: 100%;
+}
+
+.assignment-form-grid .calendar-picker--inline {
+  grid-template-rows: auto minmax(0, 1fr);
+  align-content: stretch;
+}
+
+.assignment-form-grid input,
+.assignment-form-grid .calendar-picker__trigger,
+.assignment-form-grid .academic-select__trigger {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+@media (max-width: 760px) {
+  .assignment-form-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (min-width: 761px) and (max-width: 1360px) {
+  .assignment-form-grid { grid-template-columns: minmax(0, 1.35fr) minmax(250px, 1fr); }
+  .assignment-form-date-time { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 760px) {
+  .assignment-form-date-time { grid-template-columns: minmax(0, 1fr); }
 }
 
 .assignment-list-table td small {
@@ -28,16 +101,49 @@
   margin: 6px 0 17px;
 }
 
+.room-agenda-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.room-agenda-header > .muted-copy {
+  margin: 0;
+}
+
+.room-agenda-header .room-agenda-toolbar {
+  margin: 0;
+}
+
 .room-agenda-nav { flex-wrap: wrap; }
 .room-agenda-nav strong { min-width: 145px; color: #29456f; font-size: 14px; text-align: center; text-transform: capitalize; }
-.room-agenda-total { color: #57749b; font-size: 11px; font-weight: 700; }
+.room-agenda-total { display: block; color: #57749b; font-size: 11px; font-weight: 700; }
 .room-agenda-nav .calendar-nav:focus-visible { outline: 3px solid #9fc1f1; outline-offset: 2px; }
 
 .room-agenda-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(230px, 0.34fr);
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
+}
+
+.room-agenda-workspace {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.33fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.room-agenda-controls,
+.room-agenda-main {
+  min-width: 0;
+}
+
+.room-agenda-controls {
+  display: grid;
+  align-content: start;
+  gap: 16px;
 }
 
 .room-calendar {
@@ -50,8 +156,8 @@
 .room-calendar-weekdays,
 .room-calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(82px, 1fr));
-  min-width: 630px;
+  grid-template-columns: repeat(7, minmax(72px, 1fr));
+  min-width: 560px;
 }
 
 .room-calendar-weekdays {
@@ -109,6 +215,7 @@
 .room-calendar-day .room-calendar-free { color: #99a6b8; }
 
 .room-agenda-detail {
+  min-width: 0;
   overflow: hidden;
   border: 1px solid #dce5f0;
   border-radius: 10px;
@@ -163,8 +270,17 @@
 
 @media (max-width: 760px) {
   .room-agenda-panel { padding: 16px; }
+  .room-agenda-header { align-items: flex-start; flex-direction: column; }
+  .room-agenda-workspace { grid-template-columns: minmax(0, 1fr); }
+  .room-agenda-controls { grid-template-columns: minmax(0, 1fr); }
   .room-agenda-layout { grid-template-columns: minmax(0, 1fr); }
   .room-agenda-nav strong { min-width: 120px; }
+}
+
+@media (min-width: 761px) and (max-width: 1100px) {
+  .room-agenda-workspace,
+  .room-agenda-layout { grid-template-columns: minmax(0, 1fr); }
+  .room-agenda-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (prefers-reduced-motion: reduce) {

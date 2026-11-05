@@ -329,53 +329,57 @@ export function CursosPanel({ query, setQuery, onNotify }: { query: string; setQ
           <h2>Nuevo curso</h2>
           <p className="muted-copy">Completá los datos del curso y vinculalo con su período, sede y asignatura.</p>
           {cargandoCatalogos && <p className="muted-copy" role="status">Cargando asignaturas, períodos, sedes y aulas...</p>}
-          <div className="form-grid">
-            <label>
-              Código
-              <input required maxLength={8} value={valores.codigo} onChange={(event) => setValores({ ...valores, codigo: normalizarCodigoAcademico(event.target.value) })} placeholder="Ej. ARQ1-001" pattern="[A-Z]{3}[0-9]?-[0-9]{3}" title={CODIGO_ACADEMICO_MENSAJE} />
-            </label>
-            <AcademicSelect label="Asignatura" value={String(valores.asignaturaId || '')} options={opcionesAsignatura} onChange={(value) => setValores({ ...valores, asignaturaId: Number(value) })} placeholder="Seleccioná una asignatura" searchPlaceholder="Buscar asignatura por nombre o código..." emptyMessage="No hay asignaturas disponibles." loading={cargandoCatalogos} disabled={!cargandoCatalogos && opcionesAsignatura.length === 0} />
-            <AcademicSelect label="Período" value={String(valores.periodoId || '')} options={opcionesPeriodo} onChange={(value) => {
-              const periodo = catalogos.periodos.find((item) => item.id === Number(value))
-              setValores({ ...valores, periodoId: Number(value), fechaInicio: periodo?.fechaInicio ?? valores.fechaInicio, fechaFin: periodo?.fechaFin ?? valores.fechaFin })
-            }} placeholder="Seleccioná un período" searchPlaceholder="Buscar período..." emptyMessage="No hay períodos vigentes o futuros." loading={cargandoCatalogos} disabled={!cargandoCatalogos && opcionesPeriodo.length === 0} />
-            <AcademicSelect label="Sede" value={String(valores.sedeId || '')} options={opcionesSede} onChange={(value) => setValores({ ...valores, sedeId: Number(value), aulaId: 0 })} placeholder="Seleccioná una sede" searchPlaceholder="Buscar sede..." emptyMessage="No hay sedes disponibles." loading={cargandoCatalogos} disabled={!cargandoCatalogos && opcionesSede.length === 0} />
-            <label>
-              Modalidad
-              <select value={valores.modalidad} onChange={(event) => setValores({ ...valores, modalidad: event.target.value })}>
-                <option value="">Seleccioná una modalidad...</option>
-                {modalidades.map((modalidad) => <option key={modalidad.value} value={modalidad.value}>{modalidad.label}</option>)}
-              </select>
-            </label>
-            <label>
-              Cupo máximo
-              <input type="number" inputMode="numeric" min="1" step="1" value={valores.cupoMaximo || ''} onChange={(event) => setValores({ ...valores, cupoMaximo: Number(event.target.value) })} />
-            </label>
-            <CalendarDatePicker label="Fecha de inicio" value={valores.fechaInicio} onChange={(fechaInicio) => setValores({ ...valores, fechaInicio })} />
-            <CalendarDatePicker label="Fecha de fin" value={valores.fechaFin} onChange={(fechaFin) => setValores({ ...valores, fechaFin })} />
-          </div>
-          <div className="form-grid">
-            <label>Turno
-              <select value={valores.turno} onChange={(event) => setValores({ ...valores, turno: event.target.value as CrearCurso['turno'] })}>
-                <option value="">Seleccioná un turno...</option>
-                <option value="MAÑANA">Mañana</option>
-                <option value="TARDE">Tarde</option>
-                <option value="NOCHE">Noche</option>
-              </select>
-            </label>
-            <label>Día de la semana
-              <select value={valores.diaSemana} onChange={(event) => setValores({ ...valores, diaSemana: event.target.value })}>
-                <option value="">Seleccioná un día...</option>
-                {diasSemana.map((dia) => <option key={dia.value} value={dia.value}>{dia.label}</option>)}
-              </select>
-            </label>
-            <AcademicSelect label="Aula" value={String(valores.aulaId || '')} options={opcionesAula} onChange={(value) => setValores({ ...valores, aulaId: Number(value) })} placeholder={!valores.sedeId ? 'Primero seleccioná una sede' : 'Seleccioná un aula'} searchPlaceholder="Buscar aula por nombre o código..." emptyMessage={!valores.sedeId ? 'Seleccioná una sede para ver sus aulas.' : 'No hay aulas para esta sede.'} loading={cargandoCatalogos} disabled={!valores.sedeId || cargandoCatalogos || opcionesAula.length === 0} />
-            <label>Hora de inicio
-              <input type="time" value={valores.horaInicio} onChange={(event) => setValores({ ...valores, horaInicio: event.target.value })} />
-            </label>
-            <label>Hora de fin
-              <input type="time" value={valores.horaFin} onChange={(event) => setValores({ ...valores, horaFin: event.target.value })} />
-            </label>
+          <div className="form-grid course-create-fields">
+            <div className="course-create-column">
+              <AcademicSelect label="Sede" value={String(valores.sedeId || '')} options={opcionesSede} onChange={(value) => setValores({ ...valores, sedeId: Number(value), aulaId: 0 })} placeholder="Seleccioná una sede" searchPlaceholder="Buscar sede..." emptyMessage="No hay sedes disponibles." loading={cargandoCatalogos} disabled={!cargandoCatalogos && opcionesSede.length === 0} />
+              <AcademicSelect label="Asignatura" value={String(valores.asignaturaId || '')} options={opcionesAsignatura} onChange={(value) => setValores({ ...valores, asignaturaId: Number(value) })} placeholder="Seleccioná una asignatura" searchPlaceholder="Buscar asignatura por nombre o código..." emptyMessage="No hay asignaturas disponibles." loading={cargandoCatalogos} disabled={!cargandoCatalogos && opcionesAsignatura.length === 0} />
+              <AcademicSelect label="Aula" value={String(valores.aulaId || '')} options={opcionesAula} onChange={(value) => setValores({ ...valores, aulaId: Number(value) })} placeholder={!valores.sedeId ? 'Primero seleccioná una sede' : 'Seleccioná un aula'} searchPlaceholder="Buscar aula por nombre o código..." emptyMessage={!valores.sedeId ? 'Seleccioná una sede para ver sus aulas.' : 'No hay aulas para esta sede.'} loading={cargandoCatalogos} disabled={!valores.sedeId || cargandoCatalogos || opcionesAula.length === 0} />
+              <AcademicSelect label="Período" value={String(valores.periodoId || '')} options={opcionesPeriodo} onChange={(value) => {
+                const periodo = catalogos.periodos.find((item) => item.id === Number(value))
+                setValores({ ...valores, periodoId: Number(value), fechaInicio: periodo?.fechaInicio ?? valores.fechaInicio, fechaFin: periodo?.fechaFin ?? valores.fechaFin })
+              }} placeholder="Seleccioná un período" searchPlaceholder="Buscar período..." emptyMessage="No hay períodos vigentes o futuros." loading={cargandoCatalogos} disabled={!cargandoCatalogos && opcionesPeriodo.length === 0} />
+              <label>
+                Modalidad
+                <select value={valores.modalidad} onChange={(event) => setValores({ ...valores, modalidad: event.target.value })}>
+                  <option value="">Seleccioná una modalidad...</option>
+                  {modalidades.map((modalidad) => <option key={modalidad.value} value={modalidad.value}>{modalidad.label}</option>)}
+                </select>
+              </label>
+              <label>Turno
+                <select value={valores.turno} onChange={(event) => setValores({ ...valores, turno: event.target.value as CrearCurso['turno'] })}>
+                  <option value="">Seleccioná un turno...</option>
+                  <option value="MAÑANA">Mañana</option>
+                  <option value="TARDE">Tarde</option>
+                  <option value="NOCHE">Noche</option>
+                </select>
+              </label>
+              <label>Día de la semana
+                <select value={valores.diaSemana} onChange={(event) => setValores({ ...valores, diaSemana: event.target.value })}>
+                  <option value="">Seleccioná un día...</option>
+                  {diasSemana.map((dia) => <option key={dia.value} value={dia.value}>{dia.label}</option>)}
+                </select>
+              </label>
+            </div>
+            <div className="course-create-column course-create-column--details">
+              <label>
+                Código
+                <input required maxLength={8} value={valores.codigo} onChange={(event) => setValores({ ...valores, codigo: normalizarCodigoAcademico(event.target.value) })} placeholder="Ej. ARQ1-001" pattern="[A-Z]{3}[0-9]?-[0-9]{3}" title={CODIGO_ACADEMICO_MENSAJE} />
+              </label>
+              <label>
+                Cupo máximo
+                <input type="number" inputMode="numeric" min="1" step="1" value={valores.cupoMaximo || ''} onChange={(event) => setValores({ ...valores, cupoMaximo: Number(event.target.value) })} />
+              </label>
+              <div className="course-create-date-range">
+                <CalendarDatePicker label="Fecha de inicio" value={valores.fechaInicio} onChange={(fechaInicio) => setValores({ ...valores, fechaInicio })} inline />
+                <CalendarDatePicker label="Fecha de fin" value={valores.fechaFin} onChange={(fechaFin) => setValores({ ...valores, fechaFin })} inline />
+              </div>
+              <label>Hora de inicio
+                <input type="time" value={valores.horaInicio} onChange={(event) => setValores({ ...valores, horaInicio: event.target.value })} />
+              </label>
+              <label>Hora de fin
+                <input type="time" value={valores.horaFin} onChange={(event) => setValores({ ...valores, horaFin: event.target.value })} />
+              </label>
+            </div>
           </div>
           <h3>Condiciones para regularizar</h3>
           <p className="muted-copy">Estos mínimos quedarán vinculados al curso y se podrán editar más adelante.</p>
@@ -543,47 +547,53 @@ function DetalleCurso({
           <p>{fechaBreve(curso.fechaInicio)} – {fechaBreve(curso.fechaFin)}</p>
           <p>{nombreDia(curso.diaSemana)} · {curso.turno?.toLocaleLowerCase() ?? 'Sin turno'}{curso.horaInicio && curso.horaFin ? ` · ${curso.horaInicio.slice(0, 5)}–${curso.horaFin.slice(0, 5)}` : ''} · Aula {curso.aulaNombre ?? (curso.aulaId ? 'no disponible' : 'sin asignar')}</p>
         </div>
-        <div className="form-grid course-detail__section-form">
-          <label>Estado
-            <select value={estado} disabled={cursoCerrado} onChange={(event) => setEstado(event.target.value)}>
-              {estadosPosibles.map((opcion) => <option key={opcion.value} value={opcion.value}>{opcion.label}</option>)}
-            </select>
-            {cursoCerrado && <small>Un curso finalizado o cancelado no se puede reabrir ni modificar.</small>}
-          </label>
+        <div className="course-detail__status-controls">
+          <div className="form-grid course-detail__section-form">
+            <label>Estado
+              <select value={estado} disabled={cursoCerrado} onChange={(event) => setEstado(event.target.value)}>
+                {estadosPosibles.map((opcion) => <option key={opcion.value} value={opcion.value}>{opcion.label}</option>)}
+              </select>
+              {cursoCerrado && <small>Un curso finalizado o cancelado no se puede reabrir ni modificar.</small>}
+            </label>
+          </div>
+          <button className="secondary-button" type="button" onClick={guardarEstado} disabled={estado === curso.estado}>Actualizar estado</button>
         </div>
-        <button className="secondary-button" type="button" onClick={guardarEstado} disabled={estado === curso.estado}>Actualizar estado</button>
       </article>
       <article className="panel course-detail__section">
         <h2>Horario y aula</h2>
-        <div className="form-grid">
-          <label>Día de la semana
-            <select value={horario.diaSemana} onChange={(event) => setHorario({ ...horario, diaSemana: event.target.value })}>
-              <option value="">Seleccioná un día...</option>
-              {diasSemana.map((dia) => <option key={dia.value} value={dia.value}>{dia.label}</option>)}
-            </select>
-          </label>
-          <label>Aula
-            <select
-              value={horario.aulaId || ''}
-              onChange={(event) => setHorario({ ...horario, aulaId: Number(event.target.value) })}
-              disabled={cargandoAulas || aulasDeSede.length === 0}
-            >
-              <option value="">
-                {cargandoAulas ? 'Cargando aulas disponibles…' : aulasDeSede.length ? 'Seleccioná un aula…' : 'No hay aulas disponibles para esta sede'}
-              </option>
-              {mostrarAulaActualSinVerificar && (
-                <option value={horario.aulaId} disabled>
-                  Aula actual: {curso.aulaNombre ?? `#${horario.aulaId}`} ({cargandoAulas ? 'comprobando disponibilidad…' : 'no disponible'})
+        <div className="form-grid course-detail__schedule-form">
+          <div className="course-detail__schedule-column">
+            <label>Aula
+              <select
+                value={horario.aulaId || ''}
+                onChange={(event) => setHorario({ ...horario, aulaId: Number(event.target.value) })}
+                disabled={cargandoAulas || aulasDeSede.length === 0}
+              >
+                <option value="">
+                  {cargandoAulas ? 'Cargando aulas disponibles…' : aulasDeSede.length ? 'Seleccioná un aula…' : 'No hay aulas disponibles para esta sede'}
                 </option>
-              )}
-              {aulasDeSede.map((aula) => (
-                <option key={aula.id} value={aula.id}>{aula.codigo}: {aula.nombre}</option>
-              ))}
-            </select>
-            {aulaActualAusente && <small className="course-detail__field-note course-detail__field-note--warning">El aula actual no figura entre las disponibles; elegí otra para cambiarla.</small>}
-          </label>
-          <label>Hora de inicio<input type="time" value={horario.horaInicio} onChange={(event) => setHorario({ ...horario, horaInicio: event.target.value })} /></label>
-          <label>Hora de fin<input type="time" value={horario.horaFin} onChange={(event) => setHorario({ ...horario, horaFin: event.target.value })} /></label>
+                {mostrarAulaActualSinVerificar && (
+                  <option value={horario.aulaId} disabled>
+                    Aula actual: {curso.aulaNombre ?? `#${horario.aulaId}`} ({cargandoAulas ? 'comprobando disponibilidad…' : 'no disponible'})
+                  </option>
+                )}
+                {aulasDeSede.map((aula) => (
+                  <option key={aula.id} value={aula.id}>{aula.codigo}: {aula.nombre}</option>
+                ))}
+              </select>
+              {aulaActualAusente && <small className="course-detail__field-note course-detail__field-note--warning">El aula actual no figura entre las disponibles; elegí otra para cambiarla.</small>}
+            </label>
+            <label>Día de la semana
+              <select value={horario.diaSemana} onChange={(event) => setHorario({ ...horario, diaSemana: event.target.value })}>
+                <option value="">Seleccioná un día...</option>
+                {diasSemana.map((dia) => <option key={dia.value} value={dia.value}>{dia.label}</option>)}
+              </select>
+            </label>
+          </div>
+          <div className="course-detail__schedule-column">
+            <label>Hora de inicio<input type="time" value={horario.horaInicio} onChange={(event) => setHorario({ ...horario, horaInicio: event.target.value })} /></label>
+            <label>Hora de fin<input type="time" value={horario.horaFin} onChange={(event) => setHorario({ ...horario, horaFin: event.target.value })} /></label>
+          </div>
         </div>
         {errorAulas && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {errorAulas}</div>}
         <button className="secondary-button" type="button" onClick={guardarHorario} disabled={cargandoAulas || cursoCerrado}>Guardar horario</button>

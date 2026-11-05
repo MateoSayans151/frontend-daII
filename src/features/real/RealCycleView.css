@@ -1,3 +1,10 @@
+.period-create-column {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  min-width: 0;
+}
+
 .cycle-cards {
   align-items: start;
 }
