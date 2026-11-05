@@ -97,9 +97,6 @@ function SedesYAulasPanel({ query, setQuery, onNotify }: { query: string; setQue
       </div>
     )}
 
-    {sedeId !== null && sedes.items.find((sede) => sede.id === sedeId) && (
-      <p className="muted-copy selected-campus-address"><MapPin size={16} aria-hidden="true" /> Dirección: {sedes.items.find((sede) => sede.id === sedeId)?.direccion}</p>
-    )}
     {sedes.error && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {sedes.error}</div>}
 
     {formSede && (

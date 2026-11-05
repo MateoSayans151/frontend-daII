@@ -99,7 +99,7 @@ function opcionesAsignatura(asignaturas: AsignaturaCatalogo[]): AcademicSelectOp
 function opcionesAula(aulas: AulaCatalogo[]): AcademicSelectOption[] {
   return aulas.map((aula) => ({
     value: String(aula.id), label: aula.nombre || aula.codigo, code: aula.codigo,
-    description: aula.sedeNombre, meta: `Capacidad: ${aula.capacidadMaxima}`,
+    description: [aula.sedeNombre, `Capacidad: ${aula.capacidadMaxima}`].filter(Boolean).join(' · '),
   }))
 }
 
@@ -175,14 +175,20 @@ export function AsignacionesPanel({ onNotify, query, setQuery }: { onNotify: (v:
       {errorCatalogos && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {errorCatalogos}</div>}
       {errorCreacion && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {errorCreacion}</div>}
       <div className="form-grid assignment-form-grid">
-        <AcademicSelect label="Aula" value={valores.aulaId} options={opcionesAula(aulas)} onChange={(aulaId) => setValores({ ...valores, aulaId })} placeholder="Seleccioná un aula" searchPlaceholder="Buscar aula por nombre o código..." emptyMessage="No hay aulas disponibles." loading={cargandoCatalogos} disabled={!cargandoCatalogos && aulas.length === 0} />
-        <AcademicSelect label="Asignatura" value={valores.asignaturaId} options={opcionesAsignatura(asignaturas)} onChange={(asignaturaId) => setValores({ ...valores, asignaturaId })} placeholder="Seleccioná una asignatura" searchPlaceholder="Buscar asignatura por nombre o código..." emptyMessage="No hay asignaturas disponibles." loading={cargandoCatalogos} disabled={!cargandoCatalogos && asignaturas.length === 0} />
-        <CalendarDatePicker label="Fecha" value={valores.fecha} onChange={(fecha) => setValores({ ...valores, fecha })} />
-        <label>Cantidad de estudiantes
-          <input type="number" inputMode="numeric" min="1" max={capacidadAulaSeleccionada ?? 100} step="1" value={valores.cantidadEstudiantes} placeholder={capacidadAulaSeleccionada ? `Máximo: ${capacidadAulaSeleccionada} estudiantes` : 'Seleccioná un aula'} onChange={(e) => setValores({ ...valores, cantidadEstudiantes: e.target.value })} />
-        </label>
-        <label>Hora de inicio<input type="time" value={valores.horaInicio} onClick={(event) => event.currentTarget.showPicker?.()} onChange={(e) => setValores({ ...valores, horaInicio: e.target.value })} /></label>
-        <label>Hora de fin<input type="time" value={valores.horaFin} onClick={(event) => event.currentTarget.showPicker?.()} onChange={(e) => setValores({ ...valores, horaFin: e.target.value })} /></label>
+        <div className="assignment-form-column">
+          <AcademicSelect label="Aula" value={valores.aulaId} options={opcionesAula(aulas)} onChange={(aulaId) => setValores({ ...valores, aulaId })} placeholder="Seleccioná un aula" searchPlaceholder="Buscar aula por nombre o código..." emptyMessage="No hay aulas disponibles." loading={cargandoCatalogos} disabled={!cargandoCatalogos && aulas.length === 0} />
+          <AcademicSelect label="Asignatura" value={valores.asignaturaId} options={opcionesAsignatura(asignaturas)} onChange={(asignaturaId) => setValores({ ...valores, asignaturaId })} placeholder="Seleccioná una asignatura" searchPlaceholder="Buscar asignatura por nombre o código..." emptyMessage="No hay asignaturas disponibles." loading={cargandoCatalogos} disabled={!cargandoCatalogos && asignaturas.length === 0} />
+          <label className="assignment-student-count">Cantidad de estudiantes
+            <input type="number" inputMode="numeric" min="1" max={capacidadAulaSeleccionada ?? 100} step="1" value={valores.cantidadEstudiantes} placeholder={capacidadAulaSeleccionada ? `Máximo: ${capacidadAulaSeleccionada} estudiantes` : 'Seleccioná un aula'} onChange={(e) => setValores({ ...valores, cantidadEstudiantes: e.target.value })} />
+          </label>
+        </div>
+        <div className="assignment-form-date-time">
+          <CalendarDatePicker label="Fecha" value={valores.fecha} onChange={(fecha) => setValores({ ...valores, fecha })} inline />
+          <div className="assignment-form-times">
+            <label>Hora de inicio<input type="time" value={valores.horaInicio} onClick={(event) => event.currentTarget.showPicker?.()} onChange={(e) => setValores({ ...valores, horaInicio: e.target.value })} /></label>
+            <label>Hora de fin<input type="time" value={valores.horaFin} onClick={(event) => event.currentTarget.showPicker?.()} onChange={(e) => setValores({ ...valores, horaFin: e.target.value })} /></label>
+          </div>
+        </div>
       </div>
       <button className="primary-button" type="button" onClick={crear} disabled={creando || cargandoCatalogos}><Plus size={16} /> {creando ? 'Guardando...' : 'Crear asignación'}</button>
     </article>
@@ -248,26 +254,51 @@ export function AgendaPanel() {
   const hoy = fechaLocal(new Date())
 
   return <article className="panel room-agenda-panel">
-    <p className="muted-copy">Elegí un aula para consultar sus días y horarios ocupados.</p>
-    <div className="form-grid agenda-filter-grid">
-      <AcademicSelect label="Aula" value={aulaId} options={opcionesAula(aulas)} onChange={setAulaId} placeholder="Seleccioná un aula" searchPlaceholder="Buscar aula por nombre, código o sede..." emptyMessage="No hay aulas disponibles." loading={cargandoCatalogos} disabled={!cargandoCatalogos && aulas.length === 0} />
-      <CalendarDatePicker label="Ir a una fecha" value={fecha} onChange={setFecha} />
+    <div className="room-agenda-header">
+      <p className="muted-copy">Elegí un aula para consultar sus días y horarios ocupados.</p>
+      <div className="room-agenda-toolbar">
+        <div className="room-agenda-nav">
+          <button className="calendar-nav" type="button" onClick={() => setFecha(moverMes(fecha, -1))} aria-label="Mes anterior"><CaretLeft size={17} /></button>
+          <strong>{tituloMes}</strong>
+          <button className="calendar-nav" type="button" onClick={() => setFecha(moverMes(fecha, 1))} aria-label="Mes siguiente"><CaretRight size={17} /></button>
+          <button className="secondary-button" type="button" onClick={() => setFecha(fechaLocal(new Date()))}>Hoy</button>
+        </div>
+      </div>
     </div>
     {errorCatalogos && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {errorCatalogos}</div>}
-    <div className="room-agenda-toolbar">
-      <div className="room-agenda-nav">
-        <button className="calendar-nav" type="button" onClick={() => setFecha(moverMes(fecha, -1))} aria-label="Mes anterior"><CaretLeft size={17} /></button>
-        <strong>{tituloMes}</strong>
-        <button className="calendar-nav" type="button" onClick={() => setFecha(moverMes(fecha, 1))} aria-label="Mes siguiente"><CaretRight size={17} /></button>
-        <button className="secondary-button" type="button" onClick={() => setFecha(fechaLocal(new Date()))}>Hoy</button>
-      </div>
-      {aulaId && !cargandoAgenda && !errorAgenda && <span className="room-agenda-total" role="status">{agenda.length} {agenda.length === 1 ? 'ocupación en el período' : 'ocupaciones en el período'}</span>}
-    </div>
-    {errorAgenda && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {errorAgenda}</div>}
-    {cargandoAgenda ? <SurfaceSkeleton label="agenda del aula" rows={4} /> : !aulaId ? (
-      <p className="agenda-empty" role="status">Seleccioná un aula para ver su disponibilidad mensual.</p>
-    ) : !errorAgenda && (
-      <div className="room-agenda-layout">
+    <div className="room-agenda-workspace">
+      <aside className="room-agenda-controls">
+        <AcademicSelect label="Aula" value={aulaId} options={opcionesAula(aulas)} onChange={setAulaId} placeholder="Seleccioná un aula" searchPlaceholder="Buscar aula por nombre, código o sede..." emptyMessage="No hay aulas disponibles." loading={cargandoCatalogos} disabled={!cargandoCatalogos && aulas.length === 0} />
+        <CalendarDatePicker label="Fecha" value={fecha} onChange={setFecha} />
+        {aulaId && !cargandoAgenda && !errorAgenda && <span className="room-agenda-total" role="status">{agenda.length} {agenda.length === 1 ? 'ocupación en el período' : 'ocupaciones en el período'}</span>}
+        {!cargandoAgenda && aulaId && !errorAgenda && <aside className="room-agenda-detail" aria-live="polite">
+          <div className="room-agenda-detail-head">
+            <span>Detalle del día</span>
+            <strong>{mostrarFecha(fecha)}</strong>
+            <small>{aulaSeleccionada?.nombre} · {aulaSeleccionada?.sedeNombre}</small>
+          </div>
+          {reservasSeleccionadas.length === 0 ? (
+            <p className="room-agenda-available">El aula no tiene horarios ocupados este día.</p>
+          ) : reservasSeleccionadas.map((reserva) => {
+            const esCurso = reserva.tipo === 'CURSO'
+            return <div className={`room-agenda-event${esCurso ? ' is-course' : ' is-assignment'}`} key={`${reserva.tipo}-${reserva.referenciaId}-${reserva.fecha}`}>
+              <Clock size={17} aria-hidden="true" />
+              <span>
+                <em className="room-agenda-event-type">{esCurso ? 'Curso recurrente' : 'Asignación puntual'}</em>
+                <strong>{mostrarHora(reserva.horaInicio)}–{mostrarHora(reserva.horaFin)}</strong>
+                <b>{reserva.asignaturaNombre || `Asignatura #${reserva.asignaturaId}`}</b>
+                <small>{reserva.asignaturaCodigo}{esCurso && reserva.cursoCodigo ? ` · Curso ${reserva.cursoCodigo}` : ''}{reserva.cantidadEstudiantes ? ` · ${reserva.cantidadEstudiantes} estudiantes` : ''}</small>
+              </span>
+            </div>
+          })}
+        </aside>}
+      </aside>
+      <section className="room-agenda-main">
+        {errorAgenda && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {errorAgenda}</div>}
+        {cargandoAgenda ? <SurfaceSkeleton label="agenda del aula" rows={4} /> : !aulaId ? (
+          <p className="agenda-empty" role="status">Seleccioná un aula para ver su disponibilidad mensual.</p>
+        ) : !errorAgenda && (
+          <div className="room-agenda-layout">
         <section className="room-calendar" aria-label={`Agenda de ${aulaSeleccionada?.nombre ?? 'aula'} para ${tituloMes}`}>
           <div className="room-calendar-weekdays" aria-hidden="true">
             {dias.map((dia) => <span key={dia}>{dia.slice(0, 3)}</span>)}
@@ -295,28 +326,9 @@ export function AgendaPanel() {
             })}
           </div>
         </section>
-        <aside className="room-agenda-detail" aria-live="polite">
-          <div className="room-agenda-detail-head">
-            <span>Detalle del día</span>
-            <strong>{mostrarFecha(fecha)}</strong>
-            <small>{aulaSeleccionada?.nombre} · {aulaSeleccionada?.sedeNombre}</small>
           </div>
-          {reservasSeleccionadas.length === 0 ? (
-            <p className="room-agenda-available">El aula no tiene horarios ocupados este día.</p>
-          ) : reservasSeleccionadas.map((reserva) => {
-            const esCurso = reserva.tipo === 'CURSO'
-            return <div className={`room-agenda-event${esCurso ? ' is-course' : ' is-assignment'}`} key={`${reserva.tipo}-${reserva.referenciaId}-${reserva.fecha}`}>
-              <Clock size={17} aria-hidden="true" />
-              <span>
-                <em className="room-agenda-event-type">{esCurso ? 'Curso recurrente' : 'Asignación puntual'}</em>
-                <strong>{mostrarHora(reserva.horaInicio)}–{mostrarHora(reserva.horaFin)}</strong>
-                <b>{reserva.asignaturaNombre || `Asignatura #${reserva.asignaturaId}`}</b>
-                <small>{reserva.asignaturaCodigo}{esCurso && reserva.cursoCodigo ? ` · Curso ${reserva.cursoCodigo}` : ''}{reserva.cantidadEstudiantes ? ` · ${reserva.cantidadEstudiantes} estudiantes` : ''}</small>
-              </span>
-            </div>
-          })}
-        </aside>
-      </div>
-    )}
+        )}
+      </section>
+    </div>
   </article>
 }

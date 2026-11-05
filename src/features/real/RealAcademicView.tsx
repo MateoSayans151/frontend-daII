@@ -150,7 +150,7 @@ function CarrerasPanel({ query, setQuery, onNotify }: { query: string; setQuery:
     {formAbierto !== null && (
       <article className="panel create-form-panel">
         <div className="panel-header"><div><h2>{formAbierto === 'nueva' ? 'Nueva carrera' : 'Editar carrera'}</h2></div><button className="text-button" onClick={() => setFormAbierto(null)}><X size={16} /></button></div>
-        <div className="form-grid">
+        <div className="form-grid career-form-grid">
           <label>Código<input required maxLength={8} value={valores.codigo} onChange={(e) => setValores({ ...valores, codigo: normalizarCodigoAcademico(e.target.value) })} placeholder="Ej. ARQ-001" pattern="[A-Z]{3}[0-9]?-[0-9]{3}" title={CODIGO_ACADEMICO_MENSAJE} /></label>
           <label>Nombre<input required maxLength={120} value={valores.nombre} onChange={(e) => setValores({ ...valores, nombre: e.target.value })} placeholder="Ej. Ingeniería en Informática" /></label>
           <label>Facultad<input required maxLength={120} value={valores.facultad} onChange={(e) => setValores({ ...valores, facultad: e.target.value })} placeholder="Ej. Facultad de Ingeniería" /></label>
@@ -159,7 +159,7 @@ function CarrerasPanel({ query, setQuery, onNotify }: { query: string; setQuery:
             <strong>{formAbierto === 'nueva' ? '0 años' : items.find((item) => item.id === formAbierto)?.duracion ?? '0 años'}</strong>
             <span>Se actualiza automáticamente: 5 materias equivalen a un cuatrimestre.</span>
           </div>
-          <label>Título que otorga<input required maxLength={120} value={valores.titulo} onChange={(e) => setValores({ ...valores, titulo: e.target.value })} placeholder="Ej. Ingeniero/a en Informática" /></label>
+          <label className="career-title-field">Título que otorga<input required maxLength={120} value={valores.titulo} onChange={(e) => setValores({ ...valores, titulo: e.target.value })} placeholder="Ej. Ingeniero/a en Informática" /></label>
         </div>
         <button className="primary-button" onClick={guardar} disabled={guardando}><Check size={16} /> {guardando ? 'Guardando...' : 'Guardar'}</button>
       </article>
@@ -345,8 +345,10 @@ function PlanesPanel({ onNotify }: { onNotify: (value: string) => void }) {
                       : planSinAsignaturas && <small>Cargá asignaturas para poder activarlo.</small>}
                 </label>}
               </div>
-              <button className="primary-button" onClick={guardar} disabled={guardando}><Check size={16} /> {guardando ? 'Guardando...' : 'Guardar'}</button>
-              {formAbierto !== 'nuevo' && <button className="secondary-button" onClick={cerrarFormulario}><X size={16} /> Cancelar</button>}
+              <div className="plan-form-actions">
+                <button className="primary-button" onClick={guardar} disabled={guardando}><Check size={16} /> {guardando ? 'Guardando...' : 'Guardar'}</button>
+                {formAbierto !== 'nuevo' && <button className="secondary-button" onClick={cerrarFormulario}><X size={16} /> Cancelar</button>}
+              </div>
             </article>
           )}
 

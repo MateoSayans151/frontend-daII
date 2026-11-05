@@ -714,7 +714,14 @@
   border-radius: var(--ref-radius-control);
   background: #fff;
   color: #34465d;
-  font-size: 13px;
+  font-size: 14px;
+}
+
+.calendar-picker__trigger,
+.academic-select__placeholder {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
 }
 
 .filter-button:hover,
@@ -890,6 +897,7 @@
 }
 
 .form-grid label,
+.form-grid .calendar-picker__label,
 .modal label {
   color: #33465d;
   font-size: 13px;
@@ -927,6 +935,16 @@
   border-color: var(--ref-border);
   border-radius: var(--ref-radius-control);
   background: #f7f9fc;
+}
+
+.career-form-grid > .academic-auto-field {
+  grid-column: 2;
+  grid-row: 2 / span 2;
+}
+
+.career-form-grid > .career-title-field {
+  grid-column: 1;
+  grid-row: 3;
 }
 
 .academic-auto-field small {
@@ -1017,9 +1035,12 @@
   font-size: 13px;
 }
 
-.regularity-layout,
 .split-layout {
   align-items: start;
+}
+
+.regularity-layout {
+  align-items: stretch;
 }
 
 .course-detail {
@@ -1386,6 +1407,12 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .career-form-grid > .academic-auto-field,
+  .career-form-grid > .career-title-field {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
   .form-grid > *,
   .course-filter-grid > *,
   .agenda-filter-grid > * {
@@ -1676,6 +1703,12 @@
 .create-form-panel,
 .planning-form-panel {
   margin-block: 10px 16px;
+}
+
+.plan-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .table-wrap tbody tr {

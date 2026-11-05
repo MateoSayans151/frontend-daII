@@ -125,23 +125,27 @@ function PeriodosPanel({ query, onNotify }: { query: string; onNotify: (v: strin
     {error && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {error}</div>}
     {formAbierto && (
       <article className="panel create-form-panel">
-        <div className="form-grid">
-          <label>Año
-            <select value={valores.anio} onChange={(e) => setValores({ ...valores, anio: e.target.value })}>
-              <option value="">Seleccioná el año</option>
-              {opcionesAnio.map((anio) => <option key={anio} value={anio}>{anio}</option>)}
-            </select>
-          </label>
-          <label>Número de cuatrimestre
-            <select value={valores.numero} onChange={(e) => setValores({ ...valores, numero: e.target.value })}>
-              <option value="1">1</option>
-              <option value="2">2</option>
-            </select>
-          </label>
-          <CalendarDatePicker label="Fecha de inicio" value={valores.fechaInicio} onChange={(fechaInicio) => setValores({ ...valores, fechaInicio })} />
-          <CalendarDatePicker label="Fecha de fin" value={valores.fechaFin} onChange={(fechaFin) => setValores({ ...valores, fechaFin })} />
-          <CalendarDatePicker label="Inscripción desde" value={valores.inscripcionDesde} onChange={(inscripcionDesde) => setValores({ ...valores, inscripcionDesde })} />
-          <CalendarDatePicker label="Inscripción hasta" value={valores.inscripcionHasta} onChange={(inscripcionHasta) => setValores({ ...valores, inscripcionHasta })} />
+        <div className="form-grid period-create-grid">
+          <div className="period-create-column">
+            <label>Número de cuatrimestre
+              <select value={valores.numero} onChange={(e) => setValores({ ...valores, numero: e.target.value })}>
+                <option value="1">1</option>
+                <option value="2">2</option>
+              </select>
+            </label>
+            <label>Año
+              <select value={valores.anio} onChange={(e) => setValores({ ...valores, anio: e.target.value })}>
+                <option value="">Seleccioná el año</option>
+                {opcionesAnio.map((anio) => <option key={anio} value={anio}>{anio}</option>)}
+              </select>
+            </label>
+            <CalendarDatePicker label="Inscripción desde" value={valores.inscripcionDesde} onChange={(inscripcionDesde) => setValores({ ...valores, inscripcionDesde })} />
+          </div>
+          <div className="period-create-column">
+            <CalendarDatePicker label="Fecha de inicio" value={valores.fechaInicio} onChange={(fechaInicio) => setValores({ ...valores, fechaInicio })} />
+            <CalendarDatePicker label="Fecha de fin" value={valores.fechaFin} onChange={(fechaFin) => setValores({ ...valores, fechaFin })} />
+            <CalendarDatePicker label="Inscripción hasta" value={valores.inscripcionHasta} onChange={(inscripcionHasta) => setValores({ ...valores, inscripcionHasta })} />
+          </div>
         </div>
         <button className="primary-button" onClick={crear} disabled={guardando}><Check size={16} /> {guardando ? 'Guardando...' : 'Guardar'}</button>
       </article>
@@ -236,23 +240,27 @@ function TurnosPanel({ query, onNotify }: { query: string; onNotify: (v: string)
     {error && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {error}</div>}
     {formAbierto && (
       <article className="panel create-form-panel">
-        <div className="form-grid">
-          <label>Mes
-            <select value={valores.mes} onChange={(e) => setValores({ ...valores, mes: e.target.value })}>
-              <option value="">Seleccioná el mes</option>
-              {meses.map((mes) => <option key={mes} value={mes}>{mes}</option>)}
-            </select>
-          </label>
-          <label>Año
-            <select value={valores.anio} onChange={(e) => setValores({ ...valores, anio: e.target.value })}>
-              <option value="">Seleccioná el año</option>
-              {opcionesAnio.map((anio) => <option key={anio} value={anio}>{anio}</option>)}
-            </select>
-          </label>
-          <CalendarDatePicker label="Fecha de inicio" value={valores.fechaInicio} onChange={(fechaInicio) => setValores({ ...valores, fechaInicio })} />
-          <CalendarDatePicker label="Fecha de fin" value={valores.fechaFin} onChange={(fechaFin) => setValores({ ...valores, fechaFin })} />
-          <CalendarDatePicker label="Inscripción desde" value={valores.inscripcionDesde} onChange={(inscripcionDesde) => setValores({ ...valores, inscripcionDesde })} />
-          <CalendarDatePicker label="Inscripción hasta" value={valores.inscripcionHasta} onChange={(inscripcionHasta) => setValores({ ...valores, inscripcionHasta })} />
+        <div className="form-grid period-create-grid">
+          <div className="period-create-column">
+            <label>Año
+              <select value={valores.anio} onChange={(e) => setValores({ ...valores, anio: e.target.value })}>
+                <option value="">Seleccioná el año</option>
+                {opcionesAnio.map((anio) => <option key={anio} value={anio}>{anio}</option>)}
+              </select>
+            </label>
+            <label>Mes
+              <select value={valores.mes} onChange={(e) => setValores({ ...valores, mes: e.target.value })}>
+                <option value="">Seleccioná el mes</option>
+                {meses.map((mes) => <option key={mes} value={mes}>{mes}</option>)}
+              </select>
+            </label>
+            <CalendarDatePicker label="Inscripción desde" value={valores.inscripcionDesde} onChange={(inscripcionDesde) => setValores({ ...valores, inscripcionDesde })} />
+          </div>
+          <div className="period-create-column">
+            <CalendarDatePicker label="Fecha de inicio" value={valores.fechaInicio} onChange={(fechaInicio) => setValores({ ...valores, fechaInicio })} />
+            <CalendarDatePicker label="Fecha de fin" value={valores.fechaFin} onChange={(fechaFin) => setValores({ ...valores, fechaFin })} />
+            <CalendarDatePicker label="Inscripción hasta" value={valores.inscripcionHasta} onChange={(inscripcionHasta) => setValores({ ...valores, inscripcionHasta })} />
+          </div>
         </div>
         <button className="primary-button" onClick={crear} disabled={guardando}><Check size={16} /> {guardando ? 'Guardando...' : 'Guardar'}</button>
       </article>
