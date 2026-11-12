@@ -12,13 +12,6 @@ dist
 dist-ssr
 *.local
 
-# Local agent tooling and design review state
-.agents/
-.claude/
-.codex/
-.impeccable/
-skills-lock.json
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -9,7 +9,7 @@ import type {
   CursoDetalle,
 } from "../../types/api";
 
-const BASE = "/api/planificacion/cursos";
+const BASE = "/api/v1/planificacion/cursos";
 
 export const cursosService = {
   listar: (periodoId?: number) =>
@@ -23,7 +23,7 @@ export const cursosService = {
       }>(`${BASE}/${id}`),
       authAxios.get<CursoDetalle['docentes']>(`${BASE}/${id}/docentes`),
       authAxios.get<CursoDetalle['inscripciones']>(`${BASE}/${id}/alumnos`),
-      authAxios.get<CursoDetalle['regularidad']>(`/api/regularidad/cursos/${id}`),
+      authAxios.get<CursoDetalle['regularidad']>(`/api/v1/regularidad/cursos/${id}`),
     ]).then(([detalle, docentes, alumnos, regularidad]) => ({
       ...detalle.data.curso,
       asignaturaId: detalle.data.curso.asignatura.id,

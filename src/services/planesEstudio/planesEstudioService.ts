@@ -3,10 +3,10 @@ import type { ActualizarPlanDeEstudio, CrearPlanDeEstudio, PlanDeEstudio } from 
 
 export const planesEstudioService = {
   listar: (carreraId: number) =>
-    authAxios.get<PlanDeEstudio[]>(`/api/academica/carreras/${carreraId}/planes`).then((r) => r.data),
+    authAxios.get<PlanDeEstudio[]>(`/api/v1/academica/carreras/${carreraId}/planes`).then((r) => r.data),
   crear: (carreraId: number, datos: CrearPlanDeEstudio) =>
-    authAxios.post<PlanDeEstudio>(`/api/academica/carreras/${carreraId}/planes`, datos).then((r) => r.data),
+    authAxios.post<PlanDeEstudio>(`/api/v1/academica/carreras/${carreraId}/planes`, datos).then((r) => r.data),
   actualizar: (planId: number, datos: ActualizarPlanDeEstudio) =>
-    authAxios.put<PlanDeEstudio>(`/api/academica/planes/${planId}`, datos).then((r) => r.data),
-  eliminar: (planId: number) => authAxios.delete(`/api/academica/planes/${planId}`),
+    authAxios.put<PlanDeEstudio>(`/api/v1/academica/planes/${planId}`, datos).then((r) => r.data),
+  eliminar: (planId: number) => authAxios.delete(`/api/v1/academica/planes/${planId}`),
 }

@@ -36,17 +36,17 @@ npm.cmd run dev
 
 | Sección | API utilizada |
 | --- | --- |
-| Carreras | `/api/academica/carreras` |
-| Planes | `/api/academica/carreras/{id}/planes` y `/api/academica/planes/{id}` |
-| Asignaturas | `/api/academica/planes/{id}/asignaturas` |
-| Correlatividades | `/api/academica/asignaturas/{id}/correlatividades`; devuelve condiciones agrupadas por tipo y cada materia correlativa con ID, código y nombre |
-| Sedes y aulas | `/api/planificacion/sedes` y rutas de aulas por sede |
-| Cursos | `/api/planificacion/cursos`, horario, condiciones de regularidad y consultas `/cursos/{id}/docentes` y `/cursos/{id}/alumnos` |
-| Asignaciones | `/api/planificacion/asignaciones` |
-| Agenda | `/api/planificacion/aulas/{id}/agenda?desde=&hasta=` |
-| Períodos | `/api/planificacion/periodos` |
-| Turnos | `/api/planificacion/turnos-examen` |
-| Regularidad | `GET /api/regularidad/cursos/{cursoId}` y correlativas de la asignatura |
+| Carreras | `/api/v1/academica/carreras` |
+| Planes | `/api/v1/academica/carreras/{id}/planes` y `/api/v1/academica/planes/{id}` |
+| Asignaturas | `/api/v1/academica/planes/{id}/asignaturas` |
+| Correlatividades | `/api/v1/academica/asignaturas/{id}/correlatividades`; devuelve condiciones agrupadas por tipo y cada materia correlativa con ID, código y nombre |
+| Sedes y aulas | `/api/v1/planificacion/sedes` y rutas de aulas por sede |
+| Cursos | `/api/v1/planificacion/cursos`, horario, condiciones de regularidad y consultas `/cursos/{id}/docentes` y `/cursos/{id}/alumnos` |
+| Asignaciones | `/api/v1/planificacion/asignaciones` |
+| Agenda | `/api/v1/planificacion/aulas/{id}/agenda?desde=&hasta=` |
+| Períodos | `/api/v1/planificacion/periodos` |
+| Turnos | `/api/v1/planificacion/turnos-examen` |
+| Regularidad | `GET /api/v1/regularidad/cursos/{cursoId}` y correlativas de la asignatura |
 
 Los formularios anticipan las reglas del backend y bloquean el doble envío. La pantalla de
 planes sólo habilita `Activo` si el plan tiene asignaturas y no

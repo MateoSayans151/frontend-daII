@@ -1,7 +1,7 @@
 import { authAxios } from '../api/authAxios'
 import type { CondicionesRegularidadCurso, GuardarCondicionesRegularidad } from '../../types/api'
 
-const BASE = '/api/regularidad/cursos'
+const BASE = '/api/v1/regularidad/cursos'
 
 export const regularidadService = {
   consultar: (cursoId: number) =>

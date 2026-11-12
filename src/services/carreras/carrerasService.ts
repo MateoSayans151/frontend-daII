@@ -1,7 +1,7 @@
 import { authAxios } from '../api/authAxios'
 import type { Carrera, CrearCarrera } from '../../types/api'
 
-const BASE = '/api/academica/carreras'
+const BASE = '/api/v1/academica/carreras'
 
 export const carrerasService = {
   listar: () => authAxios.get<Carrera[]>(BASE).then((r) => r.data),
