@@ -104,6 +104,9 @@ export interface CrearAula {
   nombre?: string
 }
 
+/** Un EXAMEN se publica en CORE como academic.exam-scheduled.v1. */
+export type TipoAsignacion = 'CLASE' | 'EXAMEN'
+
 export interface Asignacion {
   id: number
   aulaId: number
@@ -112,6 +115,7 @@ export interface Asignacion {
   horaInicio: string
   horaFin: string
   cantidadEstudiantes: number
+  tipo: TipoAsignacion
 }
 export interface CrearAsignacion {
   aulaId: number
@@ -120,6 +124,7 @@ export interface CrearAsignacion {
   horaInicio: string
   horaFin: string
   cantidadEstudiantes: number
+  tipo: TipoAsignacion
 }
 
 export interface OcupacionAula {
@@ -134,6 +139,8 @@ export interface OcupacionAula {
   horaInicio: string
   horaFin: string
   cantidadEstudiantes: number | null
+  /** Sólo en las ocupaciones de tipo ASIGNACION. */
+  asignacionTipo: TipoAsignacion | null
 }
 
 export interface Curso {

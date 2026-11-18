@@ -9,9 +9,12 @@ import { Toolbar } from '../../components/ui/Toolbar'
 import { extraerMensajeError } from '../../services/api/erroresApi'
 import { crearAsignacion, limpiarAgenda, listarAsignaciones, obtenerAgendaAula } from '../../services/asignaciones/asignacionesSlice'
 import { catalogosService, type AsignaturaCatalogo, type AulaCatalogo } from '../../services/catalogos/catalogosService'
-import type { OcupacionAula } from '../../types/api'
+import type { OcupacionAula, TipoAsignacion } from '../../types/api'
 
-const asignacionVacia = { aulaId: '', asignaturaId: '', fecha: '', horaInicio: '', horaFin: '', cantidadEstudiantes: '' }
+const asignacionVacia = {
+  tipo: 'CLASE' as TipoAsignacion, aulaId: '', asignaturaId: '', fecha: '', horaInicio: '', horaFin: '', cantidadEstudiantes: '',
+}
+const etiquetasTipo: Record<TipoAsignacion, string> = { CLASE: 'Clase', EXAMEN: 'Examen' }
 const dias = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
 
 function fechaLocal(fecha: Date): string {
@@ -117,7 +120,7 @@ export function AsignacionesPanel({ onNotify, query, setQuery }: { onNotify: (v:
   const asignacionesVisibles = items.filter((item) => {
     const asignatura = asignaturasPorId.get(item.asignaturaId)
     const aula = aulasPorId.get(item.aulaId)
-    const texto = `${asignatura?.nombre ?? ''} ${asignatura?.codigo ?? ''} ${aula?.nombre ?? ''} ${aula?.codigo ?? ''} ${item.fecha}`
+    const texto = `${asignatura?.nombre ?? ''} ${asignatura?.codigo ?? ''} ${aula?.nombre ?? ''} ${aula?.codigo ?? ''} ${item.fecha} ${etiquetasTipo[item.tipo] ?? ''}`
     return texto.toLocaleLowerCase('es').includes(query.toLocaleLowerCase('es'))
   })
 
@@ -160,9 +163,10 @@ export function AsignacionesPanel({ onNotify, query, setQuery }: { onNotify: (v:
       horaInicio: valores.horaInicio,
       horaFin: valores.horaFin,
       cantidadEstudiantes,
+      tipo: valores.tipo,
     }))
     if (crearAsignacion.fulfilled.match(resultado)) {
-      onNotify('Asignación creada correctamente')
+      onNotify(valores.tipo === 'EXAMEN' ? 'Examen programado correctamente' : 'Asignación creada correctamente')
       setValores(asignacionVacia)
       dispatch(listarAsignaciones())
     }
@@ -170,12 +174,18 @@ export function AsignacionesPanel({ onNotify, query, setQuery }: { onNotify: (v:
 
   return <>
     <article className="panel">
-      <p className="muted-copy">Seleccioná el aula, la asignatura y el horario de la clase.</p>
+      <p className="muted-copy">Seleccioná el aula, la asignatura y el horario de la clase o del examen.</p>
       {cargandoCatalogos && <p className="muted-copy" role="status">Cargando aulas y asignaturas...</p>}
       {errorCatalogos && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {errorCatalogos}</div>}
       {errorCreacion && <div className="form-error summary" role="alert"><WarningCircle size={15} /> {errorCreacion}</div>}
       <div className="form-grid assignment-form-grid">
         <div className="assignment-form-column">
+          <label>Tipo
+            <select value={valores.tipo} onChange={(e) => setValores({ ...valores, tipo: e.target.value as TipoAsignacion })}>
+              <option value="CLASE">Clase</option>
+              <option value="EXAMEN">Examen</option>
+            </select>
+          </label>
           <AcademicSelect label="Aula" value={valores.aulaId} options={opcionesAula(aulas)} onChange={(aulaId) => setValores({ ...valores, aulaId })} placeholder="Seleccioná un aula" searchPlaceholder="Buscar aula por nombre o código..." emptyMessage="No hay aulas disponibles." loading={cargandoCatalogos} disabled={!cargandoCatalogos && aulas.length === 0} />
           <AcademicSelect label="Asignatura" value={valores.asignaturaId} options={opcionesAsignatura(asignaturas)} onChange={(asignaturaId) => setValores({ ...valores, asignaturaId })} placeholder="Seleccioná una asignatura" searchPlaceholder="Buscar asignatura por nombre o código..." emptyMessage="No hay asignaturas disponibles." loading={cargandoCatalogos} disabled={!cargandoCatalogos && asignaturas.length === 0} />
           <label className="assignment-student-count">Cantidad de estudiantes
@@ -190,7 +200,7 @@ export function AsignacionesPanel({ onNotify, query, setQuery }: { onNotify: (v:
           </div>
         </div>
       </div>
-      <button className="primary-button" type="button" onClick={crear} disabled={creando || cargandoCatalogos}><Plus size={16} /> {creando ? 'Guardando...' : 'Crear asignación'}</button>
+      <button className="primary-button" type="button" onClick={crear} disabled={creando || cargandoCatalogos}><Plus size={16} /> {creando ? 'Guardando...' : valores.tipo === 'EXAMEN' ? 'Programar examen' : 'Crear asignación'}</button>
     </article>
 
     <div className="section-title planning-section-divider"><span><h2>Asignaciones registradas</h2></span></div>
@@ -200,12 +210,13 @@ export function AsignacionesPanel({ onNotify, query, setQuery }: { onNotify: (v:
     {cargandoLista && items.length === 0 ? <SurfaceSkeleton label="asignaciones" rows={4} /> : (
       <div className="table-wrap assignment-list-table">
         <table>
-          <thead><tr><th>Fecha</th><th>Asignatura</th><th>Aula</th><th>Horario</th><th>Estudiantes</th></tr></thead>
+          <thead><tr><th>Fecha</th><th>Tipo</th><th>Asignatura</th><th>Aula</th><th>Horario</th><th>Estudiantes</th></tr></thead>
           <tbody>{asignacionesVisibles.map((item) => {
             const asignatura = asignaturasPorId.get(item.asignaturaId)
             const aula = aulasPorId.get(item.aulaId)
             return <tr key={item.id}>
               <td>{mostrarFecha(item.fecha)}</td>
+              <td>{etiquetasTipo[item.tipo] ?? 'Clase'}</td>
               <td><strong>{asignatura?.nombre ?? `Asignatura #${item.asignaturaId}`}</strong><small>{asignatura?.codigo}</small></td>
               <td>
                 <strong>{aula?.codigo ?? `Aula #${item.aulaId}`}</strong>
@@ -284,7 +295,7 @@ export function AgendaPanel() {
             return <div className={`room-agenda-event${esCurso ? ' is-course' : ' is-assignment'}`} key={`${reserva.tipo}-${reserva.referenciaId}-${reserva.fecha}`}>
               <Clock size={17} aria-hidden="true" />
               <span>
-                <em className="room-agenda-event-type">{esCurso ? 'Curso recurrente' : 'Asignación puntual'}</em>
+                <em className="room-agenda-event-type">{esCurso ? 'Curso recurrente' : reserva.asignacionTipo === 'EXAMEN' ? 'Examen' : 'Asignación puntual'}</em>
                 <strong>{mostrarHora(reserva.horaInicio)}–{mostrarHora(reserva.horaFin)}</strong>
                 <b>{reserva.asignaturaNombre || `Asignatura #${reserva.asignaturaId}`}</b>
                 <small>{reserva.asignaturaCodigo}{esCurso && reserva.cursoCodigo ? ` · Curso ${reserva.cursoCodigo}` : ''}{reserva.cantidadEstudiantes ? ` · ${reserva.cantidadEstudiantes} estudiantes` : ''}</small>
