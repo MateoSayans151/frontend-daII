@@ -40,7 +40,7 @@ npm.cmd run dev
 | Planes | `/api/v1/academica/carreras/{id}/planes` y `/api/v1/academica/planes/{id}` |
 | Asignaturas | `/api/v1/academica/planes/{id}/asignaturas` |
 | Correlatividades | `/api/v1/academica/asignaturas/{id}/correlatividades`; devuelve condiciones agrupadas por tipo y cada materia correlativa con ID, código y nombre |
-| Sedes y aulas | `/api/v1/planificacion/sedes` y rutas de aulas por sede |
+| Sedes y aulas | Sólo lectura: `GET /api/v1/planificacion/sedes`, `GET /sedes/{id}/aulas` y `POST /sedes/sincronizar`. Muestra únicamente lo vinculado a Backoffice (`backofficeSiteId` / `backofficeLocationId`); los selectores de cursos y asignaciones ofrecen sólo sedes y aulas `ACTIVE`. |
 | Cursos | `/api/v1/planificacion/cursos`, horario, condiciones de regularidad y consultas `/cursos/{id}/docentes` y `/cursos/{id}/alumnos` |
 | Asignaciones | `/api/v1/planificacion/asignaciones` |
 | Agenda | `/api/v1/planificacion/aulas/{id}/agenda?desde=&hasta=` |

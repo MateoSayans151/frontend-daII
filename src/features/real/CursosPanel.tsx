@@ -249,10 +249,10 @@ export function CursosPanel({ query, setQuery, onNotify }: { query: string; setQ
     value: String(periodo.id), label: `${periodo.numero}.º cuatrimestre ${periodo.anio}`,
     meta: `${periodo.fechaInicio} – ${periodo.fechaFin}`,
   }))
-  const opcionesSede: AcademicSelectOption[] = catalogos.sedes.map((sede) => ({
+  const opcionesSede: AcademicSelectOption[] = catalogos.sedes.filter((sede) => sede.estado === 'ACTIVE').map((sede) => ({
     value: String(sede.id), label: sede.nombre, description: sede.direccion,
   }))
-  const opcionesAula: AcademicSelectOption[] = aulasDeSede.map((aula) => ({
+  const opcionesAula: AcademicSelectOption[] = aulasDeSede.filter((aula) => aula.estado === 'ACTIVE').map((aula) => ({
     value: String(aula.id), label: aula.nombre, code: aula.codigo,
     description: aula.sedeNombre, meta: `Capacidad: ${aula.capacidadMaxima}`,
   }))
@@ -466,7 +466,7 @@ function DetalleCurso({
   const asignatura = catalogos.asignaturas.find((item) => item.id === curso.asignaturaId)
   const periodo = catalogos.periodos.find((item) => item.id === curso.periodoId)
   const sede = catalogos.sedes.find((item) => item.id === curso.sedeId)
-  const aulasDeSede = aulas.filter((aula) => aula.sedeId === curso.sedeId)
+  const aulasDeSede = aulas.filter((aula) => aula.sedeId === curso.sedeId && aula.estado === 'ACTIVE')
   const aulaActualDisponible = aulasDeSede.some((aula) => aula.id === horario.aulaId)
   const mostrarAulaActualSinVerificar = horario.aulaId > 0 && !aulaActualDisponible
   const aulaActualAusente = !cargandoAulas && mostrarAulaActualSinVerificar

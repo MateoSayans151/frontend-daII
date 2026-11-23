@@ -81,27 +81,39 @@ export interface CrearCorrelatividad {
   tipo: TipoCorrelatividad
 }
 
+// Sedes y aulas son de Backoffice (G8); el backend guarda una copia vinculada por siteId/locationId.
+export type EstadoUbicacion = 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE'
+export type TipoUbicacion =
+  | 'AULA' | 'LABORATORIO' | 'AUDITORIO' | 'SALA_EVENTOS' | 'COMEDOR'
+  | 'BIBLIOTECA' | 'OFICINA' | 'DEPOSITO' | 'OTRO'
+
 export interface Sede {
   id: number
   nombre: string
   direccion: string
-}
-export interface CrearSede {
-  nombre: string
-  direccion: string
+  backofficeSiteId: string | null
+  estado: EstadoUbicacion
 }
 
 export interface Aula {
   id: number
   codigo: string
   nombre: string
+  backofficeLocationId: string | null
+  tipo: TipoUbicacion
   capacidadMaxima: number
   sedeId: number
+  estado: EstadoUbicacion
 }
-export interface CrearAula {
-  codigo: string
-  capacidadMaxima: number
-  nombre?: string
+
+export interface ResumenSincronizacionBackoffice {
+  sedesCreadas: number
+  sedesActualizadas: number
+  sedesDesactivadas: number
+  aulasCreadas: number
+  aulasActualizadas: number
+  aulasDesactivadas: number
+  aulasDescartadas: number
 }
 
 /** Un EXAMEN se publica en CORE como academic.exam-scheduled.v1. */

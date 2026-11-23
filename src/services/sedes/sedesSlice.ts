@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/tool
 import { sedesService } from './sedesService'
 import { extraerMensajeError } from '../api/erroresApi'
 import { estadoListaInicial, type EstadoLista } from '../api/estadoLista'
-import type { CrearSede, Sede } from '../../types/api'
+import type { ResumenSincronizacionBackoffice, Sede } from '../../types/api'
 
 export const listarSedes = createAsyncThunk<Sede[], void, { rejectValue: string }>(
   'sedes/listar',
@@ -15,11 +15,14 @@ export const listarSedes = createAsyncThunk<Sede[], void, { rejectValue: string 
   },
 )
 
-export const crearSede = createAsyncThunk<Sede, CrearSede, { rejectValue: string }>(
-  'sedes/crear',
-  async (datos, { rejectWithValue }) => {
+// Fuerza la lectura del catálogo de Backoffice y vuelve a listar las sedes actualizadas.
+export const sincronizarSedes = createAsyncThunk<ResumenSincronizacionBackoffice, void, { rejectValue: string }>(
+  'sedes/sincronizar',
+  async (_, { dispatch, rejectWithValue }) => {
     try {
-      return await sedesService.crear(datos)
+      const resumen = await sedesService.sincronizar()
+      await dispatch(listarSedes())
+      return resumen
     } catch (error) {
       return rejectWithValue(extraerMensajeError(error))
     }
@@ -44,12 +47,8 @@ const sedesSlice = createSlice({
         state.cargando = false
         state.error = action.payload ?? 'No se pudieron obtener las sedes'
       })
-
-      .addCase(crearSede.fulfilled, (state: EstadoLista<Sede>, action: PayloadAction<Sede>) => {
-        state.items.push(action.payload)
-      })
-      .addCase(crearSede.rejected, (state, action) => {
-        state.error = action.payload ?? 'No se pudo crear la sede'
+      .addCase(sincronizarSedes.rejected, (state, action) => {
+        state.error = action.payload ?? 'No se pudo sincronizar con Backoffice'
       })
   },
 })

@@ -285,7 +285,7 @@ export function RealDashboardPage({ onNavigate, onCreate }: RealDashboardPagePro
                 : sedes.items.length === 0
                   ? <EmptyResource
                       title="Todavía no hay sedes"
-                      description="Las sedes que registres aparecerán en este resumen."
+                      description="Las sedes sincronizadas desde Backoffice aparecerán en este resumen."
                       actionLabel="Ir a sedes y aulas"
                       onAction={() => onNavigate('Sedes y aulas')}
                     />
